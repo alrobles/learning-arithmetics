@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campaña de 8 Niveles · Cronógrafo Aritmético</title>
+<meta name="description" content="Escalera progresiva de 8 niveles de división directa, mapa circular de dominio por tabla (2 al 9), medallas grabadas e historial de progreso.">
+<meta name="theme-color" content="#101318">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23101318'/%3E%3Ccircle cx='16' cy='16' r='11.5' fill='none' stroke='%23e5b339' stroke-width='2'/%3E%3Ctext x='16' y='21.5' text-anchor='middle' font-family='monospace' font-size='17' font-weight='700' fill='%23e5b339'%3E%C3%B7%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/chronograph.css">
+<style>
+  .camp-shell {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 26px clamp(14px, 2.5vw, 38px) 52px;
+    display: grid;
+    gap: 24px;
+  }
+
+  /* Cabecera de rango horológico */
+  .rank-banner {
+    padding: 24px 28px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+    gap: 24px;
+    align-items: center;
+  }
+  .rank-banner h1 { font-size: clamp(1.8rem, 3.3vw, 2.45rem); margin-bottom: 6px; }
+  .rank-banner p { color: var(--ink-silver); font-size: 14.5px; }
+
+  .summary-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .sum-cell {
+    background: var(--bg-recess);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-sm);
+    padding: 10px 12px;
+  }
+  .sum-cell span { display: block; font-size: 11.5px; color: var(--ink-muted); margin-bottom: 3px; }
+  .sum-cell strong { font-family: var(--mono); font-size: 20px; color: var(--ink-ivory); }
+  .sum-cell.accent strong { color: var(--brass-bright); }
+
+  .xp-box {
+    background: var(--bg-recess);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+    padding: 18px 20px;
+    display: grid;
+    gap: 10px;
+  }
+  .xp-track {
+    height: 10px;
+    border-radius: var(--pill);
+    background: var(--bg-void);
+    border: 1px solid var(--hair);
+    overflow: hidden;
+  }
+  .xp-fill { height: 100%; background: var(--brass); transition: width 0.35s var(--ease-out); }
+
+  /* Escalera de 8 niveles */
+  .ladder {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .lv-card {
+    background: var(--bg-chamber);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+    padding: 18px 20px;
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: center;
+    color: var(--ink-ivory);
+    transition: border-color 0.16s ease, transform 0.16s var(--ease-out), background 0.16s ease;
+  }
+  .lv-card:hover {
+    text-decoration: none;
+    border-color: var(--brass-line);
+    background: var(--bg-chamber-hi);
+    transform: translateY(-2px);
+  }
+  .lv-card.completed { border-color: rgba(56, 217, 169, 0.34); }
+  .lv-num {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    border: 1.8px solid var(--brass-line);
+    background: var(--bg-recess);
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--brass);
+  }
+  .lv-card.completed .lv-num {
+    border-color: var(--emerald);
+    color: var(--emerald);
+  }
+  .lv-info h3 { font-size: 1.15rem; margin-bottom: 3px; }
+  .lv-info p { font-size: 13px; color: var(--ink-silver); }
+  .lv-meta {
+    margin-top: 6px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .lv-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .lv-stars { display: flex; gap: 3px; }
+
+  /* Dial y tabla de divisores */
+  .analytics-grid {
+    display: grid;
+    grid-template-columns: minmax(290px, 0.85fr) minmax(0, 1.15fr);
+    gap: 18px;
+  }
+  .dial-card {
+    padding: 22px;
+    display: grid;
+    gap: 12px;
+  }
+  .dial-card canvas {
+    width: 100%;
+    height: 270px;
+    display: block;
+  }
+  .div-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  .div-table th, .div-table td {
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--hair);
+    text-align: left;
+  }
+  .div-table th { color: var(--ink-muted); font-size: 12px; font-weight: 600; }
+  .div-table td.num { text-align: right; }
+
+  /* Medallas grabadas */
+  .badges-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .badge-tile {
+    padding: 16px 14px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--hair);
+    background: var(--bg-recess);
+    display: grid;
+    gap: 8px;
+    justify-items: center;
+    text-align: center;
+    opacity: 0.56;
+  }
+  .badge-tile.earned {
+    opacity: 1;
+    border-color: var(--brass-line);
+    background: var(--bg-chamber);
+  }
+  .badge-emblem {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1.6px solid var(--hair-strong);
+    display: grid;
+    place-items: center;
+    color: var(--ink-muted);
+  }
+  .badge-tile.earned .badge-emblem {
+    border-color: var(--brass);
+    background: var(--brass-soft);
+    color: var(--brass-bright);
+  }
+  .badge-tile b { font-size: 13.5px; }
+  .badge-tile span { font-size: 12px; color: var(--ink-muted); line-height: 1.4; }
+
+  .util-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--hair);
+  }
+
+  @media (max-width: 1040px) {
+    .rank-banner, .analytics-grid, .ladder { grid-template-columns: 1fr; }
+    .badges-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .summary-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#campana">Saltar a la campaña</a>
+
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <span class="brand-dial" aria-hidden="true">÷</span>
+    <span>Aritmética · <em>Cronógrafo</em></span>
+  </a>
+  <nav class="main-nav" aria-label="Navegación principal">
+    <a href="index.html">Portada</a>
+    <a href="division.html">Taller Casita</a>
+    <a href="reparto.html">Reparto Base 10</a>
+    <a href="tablas.html">Múltiplos Relámpago</a>
+    <a href="aventura.html" aria-current="page">Campaña 8 Niveles</a>
+    <a href="guia.html">Anatomía y Guía</a>
+  </nav>
+  <div class="hud-pills">
+    <span class="hud-pill brass">Racha <strong id="hudStreak">0</strong></span>
+    <span class="hud-pill hide-md"><strong id="hudXp">0 XP</strong></span>
+    <span class="hud-pill hide-md" id="hudRank">I · Aprendiz</span>
+    <button type="button" class="btn-icon" id="btnAudioToggle" aria-pressed="true" aria-label="Activar o silenciar sonido"></button>
+  </div>
+</header>
+
+<main id="campana" class="camp-shell">
+  <section class="chamber chamber-accent rank-banner">
+    <div>
+      <h1>Escalera de los 8 Niveles</h1>
+      <p>Conquista los ocho grados de la división directa: desde dos cifras exactas hasta cinco cifras con dobles ceros y restos difíciles. Puedes entrar a cualquier nivel para entrenar o completar la escalera con 3 estrellas.</p>
+      <div class="summary-row">
+        <div class="sum-cell accent"><span>Estrellas</span><strong id="totStars">0 / 24</strong></div>
+        <div class="sum-cell"><span>Resueltas</span><strong id="totSolved">0</strong></div>
+        <div class="sum-cell"><span>Mejor racha</span><strong id="totBestStreak">0</strong></div>
+        <div class="sum-cell"><span>Cuaderno Papá</span><strong id="totNotebook">0 / 3</strong></div>
+      </div>
+    </div>
+    <div class="xp-box">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <strong id="rankTitle" style="font-family:var(--serif);font-size:1.35rem;color:var(--brass-bright)">I · Aprendiz de Casita</strong>
+        <span class="num" id="rankXpNow" style="font-size:14px">0 XP</span>
+      </div>
+      <div class="xp-track"><div class="xp-fill" id="rankXpBar" style="width:0%"></div></div>
+      <span id="rankNextHint" style="font-size:12.5px;color:var(--ink-muted)">Faltan 150 XP para Calibrador Mental.</span>
+    </div>
+  </section>
+
+  <section aria-labelledby="niveles-h2">
+    <h2 id="niveles-h2" style="font-size:1.55rem;margin-bottom:14px">Niveles progresivos</h2>
+    <div class="ladder" id="ladderGrid"></div>
+  </section>
+
+  <section class="analytics-grid" aria-labelledby="telemetria-h2">
+    <div class="chamber dial-card">
+      <h2 id="telemetria-h2" style="font-size:1.35rem">Cronógrafo de Precisión (÷2 a ÷9)</h2>
+      <p style="font-size:13.5px;color:var(--ink-muted)">Cada sector mide tu precisión real en los pasos con ese divisor.</p>
+      <canvas id="campDial" role="img" aria-label="Dial circular de dominio por cada divisor del 2 al 9"></canvas>
+    </div>
+
+    <div class="chamber" style="padding:22px;overflow-x:auto">
+      <h2 style="font-size:1.35rem;margin-bottom:12px">Rendimiento por tabla</h2>
+      <table class="div-table">
+        <thead>
+          <tr>
+            <th>Divisor</th>
+            <th style="text-align:right">Pasos</th>
+            <th style="text-align:right">Precisión</th>
+            <th style="text-align:right">Tiempo / paso</th>
+            <th style="text-align:right">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="divTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="medallas-h2">
+    <h2 id="medallas-h2" style="font-size:1.55rem;margin-bottom:14px">Vitrina de 10 Medallas Grabadas</h2>
+    <div class="badges-grid" id="badgesGrid"></div>
+  </section>
+
+  <section class="util-bar">
+    <span style="font-size:13px;color:var(--ink-muted)">El progreso se guarda localmente en tu navegador (sin cuentas ni servidores).</span>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button type="button" class="btn btn-ghost btn-sm" id="btnExport">Exportar respaldo JSON</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btnResetAll" style="color:var(--crimson);border-color:rgba(232,93,86,0.4)">Reiniciar progreso</button>
+    </div>
+  </section>
+</main>
+
+<script src="js/division-engine.js"></script>
+<script src="js/gamification.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/visualizers.js"></script>
+<script src="js/nav.js"></script>
+<script>
+(function () {
+  'use strict';
+  var E = window.DivisionEngine;
+  var G = window.Gamification;
+  var V = window.ChronoVisuals;
+
+  function starIcon(on) {
+    return '<svg width="16" height="16" viewBox="0 0 24 24" fill="' + (on ? '#e5b339' : 'none') + '" stroke="' + (on ? '#e5b339' : '#4a5466') + '" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+  }
+
+  function medalSvg(earned) {
+    return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="6"/>' + (earned ? '<polyline points="9.5 9 11.2 10.7 14.8 7.2"/>' : '<circle cx="12" cy="9" r="1.5"/>') + '<path d="M8.5 14.5 L7 22 L12 19.5 L17 22 L15.5 14.5"/></svg>';
+  }
+
+  function renderAll() {
+    var st = G.load();
+    var rank = G.getRank(st.xp);
+
+    var starSum = 0;
+    for (var l = 1; l <= 8; l++) starSum += (st.levels[l] ? st.levels[l].bestStars : 0);
+
+    document.getElementById('totStars').textContent = starSum + ' / 24';
+    document.getElementById('totSolved').textContent = String(st.solved);
+    document.getElementById('totBestStreak').textContent = String(st.bestStreak);
+    document.getElementById('totNotebook').textContent = st.fathersDone.length + ' / 3';
+
+    document.getElementById('rankTitle').textContent = rank.current.code + ' · ' + rank.current.title;
+    document.getElementById('rankXpNow').textContent = st.xp + ' XP';
+    document.getElementById('rankXpBar').style.width = rank.progressPct + '%';
+    document.getElementById('rankNextHint').textContent = rank.next
+      ? ('Faltan ' + (rank.next.minXp - st.xp) + ' XP para ' + rank.next.title + '.')
+      : 'Alcanzaste el rango máximo del Cronógrafo.';
+
+    // Escalera de 8 niveles
+    var ladder = document.getElementById('ladderGrid');
+    ladder.innerHTML = '';
+    E.LEVELS.forEach(function (lv) {
+      var data = st.levels[lv.id] || { completed: 0, bestStars: 0, bestMs: null };
+      var a = document.createElement('a');
+      a.className = 'lv-card' + (data.bestStars >= 1 ? ' completed' : '');
+      a.href = 'division.html?level=' + lv.id;
+      var bestTime = data.bestMs ? ((data.bestMs / 1000).toFixed(1) + ' s récord') : 'Sin marca aún';
+      a.innerHTML =
+        '<span class="lv-num">N' + lv.id + '</span>' +
+        '<div class="lv-info">' +
+          '<h3>' + lv.name + '</h3>' +
+          '<p>' + lv.description + '</p>' +
+          '<div class="lv-meta"><span>' + lv.short + '</span><span>Resueltas: ' + data.completed + '</span><span>' + bestTime + '</span></div>' +
+        '</div>' +
+        '<div class="lv-right">' +
+          '<div class="lv-stars">' + starIcon(data.bestStars >= 1) + starIcon(data.bestStars >= 2) + starIcon(data.bestStars >= 3) + '</div>' +
+          '<span style="font-size:12.5px;font-weight:700;color:var(--brass)">Entrar →</span>' +
+        '</div>';
+      ladder.appendChild(a);
+    });
+
+    // Dial y tabla de divisores
+    var stats = G.getDivisorStats(st);
+    V.drawMasteryDial(document.getElementById('campDial'), stats);
+
+    var tbody = document.getElementById('divTableBody');
+    tbody.innerHTML = '';
+    stats.forEach(function (row) {
+      var tr = document.createElement('tr');
+      var accColor = row.accuracy == null ? 'var(--ink-muted)' : (row.accuracy >= 90 ? 'var(--emerald)' : row.accuracy >= 70 ? 'var(--brass)' : 'var(--crimson)');
+      tr.innerHTML =
+        '<td class="num" style="text-align:left;font-weight:700;color:var(--sky)">÷ ' + row.divisor + '</td>' +
+        '<td class="num">' + row.attempts + '</td>' +
+        '<td class="num" style="font-weight:700;color:' + accColor + '">' + (row.accuracy != null ? row.accuracy + '%' : '—') + '</td>' +
+        '<td class="num">' + (row.avgMs != null ? (row.avgMs / 1000).toFixed(2) + ' s' : '—') + '</td>' +
+        '<td style="text-align:right"><a class="btn btn-ghost btn-sm" href="tablas.html?div=' + row.divisor + '">Entrenar</a></td>';
+      tbody.appendChild(tr);
+    });
+
+    // Medallas
+    var bg = document.getElementById('badgesGrid');
+    bg.innerHTML = '';
+    G.BADGES.forEach(function (b) {
+      var earned = st.badges.indexOf(b.id) !== -1;
+      var card = document.createElement('div');
+      card.className = 'badge-tile' + (earned ? ' earned' : '');
+      card.innerHTML =
+        '<div class="badge-emblem">' + medalSvg(earned) + '</div>' +
+        '<b>' + b.title + '</b>' +
+        '<span>' + b.desc + '</span>';
+      bg.appendChild(card);
+    });
+  }
+
+  document.getElementById('btnExport').addEventListener('click', function () {
+    var blob = new Blob([JSON.stringify(G.load(), null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'learning-arithmetics-progreso.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('btnResetAll').addEventListener('click', function () {
+    if (window.confirm('¿Seguro que quieres borrar todo tu progreso, estrellas y estadísticas de este navegador?')) {
+      G.reset();
+      if (window.ChronoNav) window.ChronoNav.refreshHud();
+      renderAll();
+    }
+  });
+
+  window.addEventListener('resize', renderAll);
+  renderAll();
+}());
+</script>
+</body>
+</html>

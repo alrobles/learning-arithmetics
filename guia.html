@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anatomía y Guía del Algoritmo · Cronógrafo Aritmético</title>
+<meta name="description" content="Anatomía interactiva de divisor, dividendo, cociente y resto basada en el cuaderno original, comparador vivo entre algoritmo largo y directo saltando pasos, y prueba euclídea.">
+<meta name="theme-color" content="#101318">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23101318'/%3E%3Ccircle cx='16' cy='16' r='11.5' fill='none' stroke='%23e5b339' stroke-width='2'/%3E%3Ctext x='16' y='21.5' text-anchor='middle' font-family='monospace' font-size='17' font-weight='700' fill='%23e5b339'%3E%C3%B7%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/chronograph.css">
+<style>
+  .guide-shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px clamp(16px, 3vw, 40px) 60px;
+    display: grid;
+    gap: 36px;
+  }
+  .guide-head h1 { font-size: clamp(2rem, 3.8vw, 2.8rem); margin-bottom: 10px; }
+  .guide-head p { color: var(--ink-silver); max-width: 65ch; font-size: 16px; }
+
+  /* Diagrama interactivo inspirado en el cuaderno (8 ⟌ 6418) */
+  .anatomy-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+    gap: 20px;
+    align-items: center;
+  }
+  .blueprint-box {
+    padding: 24px;
+    display: grid;
+    place-items: center;
+    background: var(--bg-recess);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+  }
+  .blueprint-svg {
+    width: 100%;
+    max-width: 540px;
+    height: auto;
+    display: block;
+  }
+  .bp-part { cursor: pointer; transition: opacity 0.16s ease; }
+  .bp-part:hover { opacity: 0.92; }
+
+  .part-list {
+    display: grid;
+    gap: 8px;
+  }
+  .part-btn {
+    text-align: left;
+    padding: 13px 16px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--hair);
+    background: var(--bg-chamber);
+    color: var(--ink-ivory);
+    display: grid;
+    gap: 3px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .part-btn:hover { background: var(--bg-chamber-hi); }
+  .part-btn.on {
+    border-color: var(--brass);
+    background: var(--brass-soft);
+  }
+  .part-btn strong { font-size: 14.5px; }
+  .part-btn span { font-size: 13px; color: var(--ink-silver); }
+
+  /* Comparador Largo vs Directo */
+  .compare-panel {
+    padding: 24px 26px;
+    display: grid;
+    gap: 18px;
+  }
+  .compare-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .compare-cols {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .algo-col {
+    background: var(--bg-recess);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+    padding: 20px;
+    display: grid;
+    gap: 14px;
+    align-content: start;
+  }
+  .algo-col.featured { border-color: var(--brass-line); }
+  .algo-col h3 { font-size: 1.2rem; }
+  .algo-col p { font-size: 13.5px; color: var(--ink-muted); }
+
+  .classic-pre {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 22px;
+    line-height: 1.42;
+    margin: 0 auto;
+    padding: 8px 16px;
+    color: var(--ink-silver);
+  }
+  .classic-pre .sub-line { color: var(--crimson); opacity: 0.9; text-decoration: underline; text-underline-offset: 4px; }
+  .classic-pre .q-line { color: var(--emerald); font-weight: 700; }
+  .classic-pre .d-line { color: var(--ink-ivory); font-weight: 700; }
+
+  .saved-pill {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    padding: 6px 12px;
+    border-radius: var(--pill);
+    background: var(--emerald-soft);
+    border: 1px solid rgba(56, 217, 169, 0.4);
+    color: var(--emerald);
+  }
+
+  /* Regla fundamental interactiva */
+  .euclid-box {
+    padding: 24px 26px;
+    display: grid;
+    gap: 16px;
+  }
+  .euclid-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+  }
+  .euclid-controls label {
+    display: grid;
+    gap: 5px;
+    font-size: 13px;
+    color: var(--ink-silver);
+  }
+  .euclid-controls input[type="range"] { width: 170px; accent-color: var(--brass); }
+  .euclid-eq {
+    font-family: var(--mono);
+    font-size: clamp(1.15rem, 2.5vw, 1.55rem);
+    font-weight: 700;
+    padding: 14px 18px;
+    border-radius: var(--r-sm);
+    background: var(--bg-recess);
+    border: 1px solid var(--hair);
+    color: var(--ink-ivory);
+  }
+
+  @media (max-width: 900px) {
+    .anatomy-grid, .compare-cols { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#guia">Saltar a la guía</a>
+
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <span class="brand-dial" aria-hidden="true">÷</span>
+    <span>Aritmética · <em>Cronógrafo</em></span>
+  </a>
+  <nav class="main-nav" aria-label="Navegación principal">
+    <a href="index.html">Portada</a>
+    <a href="division.html">Taller Casita</a>
+    <a href="reparto.html">Reparto Base 10</a>
+    <a href="tablas.html">Múltiplos Relámpago</a>
+    <a href="aventura.html">Campaña 8 Niveles</a>
+    <a href="guia.html" aria-current="page">Anatomía y Guía</a>
+  </nav>
+  <div class="hud-pills">
+    <span class="hud-pill brass">Racha <strong id="hudStreak">0</strong></span>
+    <span class="hud-pill hide-md"><strong id="hudXp">0 XP</strong></span>
+    <span class="hud-pill hide-md" id="hudRank">I · Aprendiz</span>
+    <button type="button" class="btn-icon" id="btnAudioToggle" aria-pressed="true" aria-label="Activar o silenciar sonido"></button>
+  </div>
+</header>
+
+<main id="guia" class="guide-shell">
+  <section class="guide-head">
+    <h1>Anatomía del Algoritmo Directo</h1>
+    <p>Todo lo que ocurre en una división saltando pasos tiene una razón matemática exacta. Haz clic en cada parte del diagrama original del cuaderno (<span class="num">6418 ÷ 8</span>) o compara lado a lado el método largo y el método directo.</p>
+  </section>
+
+  <!-- 1. ANATOMÍA DEL CUADERNO -->
+  <section class="chamber" style="padding:24px 26px" aria-labelledby="anat-h2">
+    <h2 id="anat-h2" style="font-size:1.5rem;margin-bottom:16px">Las piezas de la casita (ejemplo 6418 ÷ 8)</h2>
+    <div class="anatomy-grid">
+      <div class="blueprint-box">
+        <svg class="blueprint-svg" viewBox="0 0 540 310" role="img" aria-label="Diagrama interactivo de 6418 entre 8 con divisor, dividendo, cociente, subrayado amarillo, salto 0 1 8 y resto rodeado 2">
+          <!-- Subrayado amarillo debajo de 64 -->
+          <rect id="svg-hl" class="bp-part" data-part="highlight" x="180" y="152" width="88" height="10" rx="3" fill="#e5b339" opacity="0.88"/>
+
+          <!-- Casita -->
+          <path d="M174 166 L174 106 L372 106" fill="none" stroke="#f2ede2" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+          <!-- Cociente 8 0 2 -->
+          <g id="svg-cociente" class="bp-part" data-part="cociente" font-family="'JetBrains Mono', monospace" font-size="40" font-weight="700" text-anchor="middle">
+            <text x="246" y="88" fill="#38d9a9">8</text>
+            <text x="294" y="88" fill="#e5b339">0</text>
+            <text x="342" y="88" fill="#38d9a9">2</text>
+            <path d="M366 74 L416 74" stroke="#38d9a9" stroke-width="1.75"/>
+            <text x="424" y="79" text-anchor="start" font-family="'Manrope', sans-serif" font-size="15" font-weight="700" fill="#38d9a9">cociente</text>
+          </g>
+
+          <!-- Divisor 8 -->
+          <g id="svg-divisor" class="bp-part" data-part="divisor" font-family="'JetBrains Mono', monospace" font-size="40" font-weight="700" text-anchor="middle">
+            <circle cx="136" cy="138" r="26" fill="rgba(86,182,247,0.12)" stroke="#56b6f7" stroke-width="2"/>
+            <text x="136" y="151" fill="#56b6f7">8</text>
+            <path d="M110 156 L78 194" stroke="#56b6f7" stroke-width="1.75"/>
+            <text x="72" y="216" text-anchor="middle" font-family="'Manrope', sans-serif" font-size="15" font-weight="700" fill="#56b6f7">divisor</text>
+          </g>
+
+          <!-- Dividendo 6 4 1 8 -->
+          <g id="svg-dividendo" class="bp-part" data-part="dividendo" font-family="'JetBrains Mono', monospace" font-size="40" font-weight="700" text-anchor="middle" fill="#f2ede2">
+            <text x="198" y="148">6</text>
+            <text x="246" y="148">4</text>
+            <text x="294" y="148">1</text>
+            <text x="342" y="148">8</text>
+            <path d="M368 138 L416 138" stroke="#c2cad6" stroke-width="1.75"/>
+            <text x="424" y="143" text-anchor="start" font-family="'Manrope', sans-serif" font-size="15" font-weight="700" fill="#f2ede2">dividendo</text>
+          </g>
+
+          <!-- Fila 0 1 8 (salto en cero al cociente) -->
+          <g id="svg-zeroskip" class="bp-part" data-part="zeroskip" font-family="'JetBrains Mono', monospace" font-size="36" font-weight="700" text-anchor="middle">
+            <rect x="224" y="172" width="140" height="44" rx="8" fill="rgba(229,179,57,0.10)" stroke="rgba(229,179,57,0.45)" stroke-dasharray="4 3"/>
+            <text x="246" y="205" fill="#c2cad6">0</text>
+            <text x="294" y="205" fill="#e5b339">1</text>
+            <text x="342" y="205" fill="#e5b339">8</text>
+            <text x="136" y="200" text-anchor="middle" font-family="'Manrope', sans-serif" font-size="12.5" font-weight="700" fill="#e5b339">salto en 1 fila</text>
+            <path d="M184 195 L220 195" stroke="#e5b339" stroke-width="1.5"/>
+          </g>
+
+          <!-- Resto 2 rodeado -->
+          <g id="svg-resto" class="bp-part" data-part="resto" font-family="'JetBrains Mono', monospace" font-size="36" font-weight="700" text-anchor="middle">
+            <circle cx="342" cy="256" r="24" fill="rgba(232,93,86,0.14)" stroke="#e85d56" stroke-width="2.6"/>
+            <text x="342" y="268" fill="#e85d56">2</text>
+            <path d="M372 256 L416 256" stroke="#e85d56" stroke-width="1.75"/>
+            <text x="424" y="261" text-anchor="start" font-family="'Manrope', sans-serif" font-size="15" font-weight="700" fill="#e85d56">resto</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="part-list" id="partList">
+        <button type="button" class="part-btn on" data-part="dividendo">
+          <strong>Dividendo (6418)</strong>
+          <span>La cantidad total que vas a repartir, cifra por cifra de izquierda a derecha.</span>
+        </button>
+        <button type="button" class="part-btn" data-part="divisor">
+          <strong>Divisor (8)</strong>
+          <span>El número de grupos iguales entre los que repartes. Manda qué tabla multiplicas.</span>
+        </button>
+        <button type="button" class="part-btn" data-part="highlight">
+          <strong>Subrayado amarillo (64)</strong>
+          <span>Como 6 &lt; 8, tomas las dos primeras cifras (64) y pones la primera cifra del cociente sobre el 4, sin escribir cero inicial.</span>
+        </button>
+        <button type="button" class="part-btn" data-part="zeroskip">
+          <strong>Salto de cero en una fila (0 1 8)</strong>
+          <span>Al bajar el 1, 1 &lt; 8: escribes 0 en el cociente y bajas el 8 enseguida en la misma línea sin gastar otra fila.</span>
+        </button>
+        <button type="button" class="part-btn" data-part="cociente">
+          <strong>Cociente (802)</strong>
+          <span>El resultado exacto que toca a cada grupo. Cada cifra queda alineada sobre la columna trabajada.</span>
+        </button>
+        <button type="button" class="part-btn" data-part="resto">
+          <strong>Resto rodeado (2)</strong>
+          <span>Lo que sobra al terminar. Siempre debe ser estrictamente menor que el divisor (0 ≤ resto &lt; 8).</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. COMPARADOR ALGORITMO LARGO VS DIRECTO -->
+  <section class="chamber compare-panel" aria-labelledby="comp-h2">
+    <div class="compare-top">
+      <div>
+        <h2 id="comp-h2" style="font-size:1.5rem">Algoritmo Largo vs. Algoritmo Directo (saltando pasos)</h2>
+        <p style="color:var(--ink-silver);font-size:14.5px;margin-top:4px">Ambos calculan exactamente los mismos números; el directo guarda la resta en tu cabeza y ahorra casi la mitad del espacio.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="saved-pill" id="savedPill">Ahorras 5 filas</span>
+        <div class="seg" role="group" aria-label="Elegir ejemplo a comparar">
+          <button type="button" class="on" data-cmp="45639,9" aria-pressed="true">45639 ÷ 9</button>
+          <button type="button" data-cmp="6418,8" aria-pressed="false">6418 ÷ 8</button>
+          <button type="button" data-cmp="3749,4" aria-pressed="false">3749 ÷ 4</button>
+          <button type="button" data-cmp="8005,4" aria-pressed="false">8005 ÷ 4</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="compare-cols">
+      <div class="algo-col">
+        <h3>Algoritmo largo (escribiendo cada resta)</h3>
+        <p>Útil al principio para ver el producto, pero ocupa muchas filas y frena el ritmo.</p>
+        <pre class="classic-pre" id="classicPre"></pre>
+      </div>
+
+      <div class="algo-col featured">
+        <h3>Algoritmo directo (tu cuaderno · saltando pasos)</h3>
+        <p>Solo escribes el resto mental de una cifra y, cuando hay cero al cociente, bajas en la misma fila.</p>
+        <div style="display:grid;place-items:center;padding:10px 0">
+          <div id="directCompareGrid" class="casita-grid compact"></div>
+        </div>
+        <a id="cmpPracticeBtn" class="btn btn-brass btn-sm" style="justify-self:start" href="division.html?d=45639&amp;v=9">Practicar esta división →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. LEY EUCLÍDEA INTERACTIVA -->
+  <section class="chamber euclid-box" aria-labelledby="euc-h2">
+    <div>
+      <h2 id="euc-h2" style="font-size:1.5rem;margin-bottom:6px">Comprueba la ley de la división en vivo</h2>
+      <p style="color:var(--ink-silver);font-size:14.5px">Mueve el divisor, el cociente y el resto: siempre reconstruyen el dividendo mientras <span class="num">0 ≤ resto &lt; divisor</span>.</p>
+    </div>
+
+    <div class="euclid-controls">
+      <label>Divisor (<span class="num" id="eValD">8</span>)
+        <input type="range" id="eRangeD" min="2" max="9" value="8">
+      </label>
+      <label>Cociente (<span class="num" id="eValQ">802</span>)
+        <input type="range" id="eRangeQ" min="1" max="999" value="802">
+      </label>
+      <label>Resto (<span class="num" id="eValR">2</span>)
+        <input type="range" id="eRangeR" min="0" max="7" value="2">
+      </label>
+    </div>
+
+    <div class="euclid-eq" id="euclidEq">8 × 802 + 2 = 6418 · (resto 2 &lt; divisor 8) ✓</div>
+    <div style="border-radius:var(--r-md);overflow:hidden;border:1px solid var(--hair);height:132px">
+      <canvas id="euclidCanvas" style="width:100%;height:100%;display:block" role="img" aria-label="Área interactiva demostrando divisor por cociente más resto"></canvas>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="foot-inner">
+    <p><strong>learning-arithmetics</strong> · Guía interactiva de división directa.</p>
+    <nav class="foot-links">
+      <a href="index.html">Portada</a>
+      <a href="division.html">Taller Casita</a>
+      <a href="reparto.html">Reparto Base 10</a>
+      <a href="aventura.html">Campaña</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="js/division-engine.js"></script>
+<script src="js/gamification.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/visualizers.js"></script>
+<script src="js/casita-ui.js"></script>
+<script src="js/nav.js"></script>
+<script>
+(function () {
+  'use strict';
+  var E = window.DivisionEngine;
+  var V = window.ChronoVisuals;
+
+  // 1. Anatomía interactiva
+  var parts = ['dividendo', 'divisor', 'highlight', 'zeroskip', 'cociente', 'resto'];
+  function focusPart(name) {
+    document.querySelectorAll('.part-btn').forEach(function (b) {
+      b.classList.toggle('on', b.getAttribute('data-part') === name);
+    });
+    parts.forEach(function (p) {
+      var el = document.getElementById('svg-' + (p === 'highlight' ? 'hl' : p));
+      if (el) el.style.opacity = (p === name) ? '1' : '0.32';
+    });
+  }
+  document.querySelectorAll('.part-btn, .bp-part').forEach(function (el) {
+    el.addEventListener('click', function () {
+      focusPart(el.getAttribute('data-part'));
+    });
+  });
+
+  // 2. Comparador Largo vs Directo
+  var directCtrl = new window.CasitaController({
+    gridEl: document.getElementById('directCompareGrid'),
+    compact: true,
+    readOnly: true
+  });
+
+  function renderCompare(D, d) {
+    var sol = E.solveDirect(D, d);
+    directCtrl.load(D, d);
+    directCtrl.stepCursor = sol.steps.length;
+    directCtrl.completed = true;
+    directCtrl.render();
+
+    document.getElementById('savedPill').textContent = 'Ahorras ' + sol.directLinesSaved + ' filas escritas';
+    document.getElementById('cmpPracticeBtn').href = 'division.html?d=' + D + '&v=' + d;
+
+    // Formatear algoritmo largo alineado por columnas
+    var L = sol.length;
+    var padPrefix = '    ';
+    var qChars = Array(L).fill(' ');
+    sol.quotientCells.forEach(function (c) { qChars[c.col] = String(c.digit); });
+    var lines = [];
+    lines.push('<span class="q-line">' + padPrefix + ' ' + qChars.join(' ') + '</span>');
+    lines.push('<span class="d-line">' + String(d).padStart(2, ' ') + ' │ ' + sol.digits.join(' ') + '</span>');
+
+    sol.classicLongRows.forEach(function (r) {
+      var txt = r.text;
+      // Alinear la última cifra del texto en r.colEnd
+      var slots = Array(L * 2 + 4).fill(' ');
+      var targetIdx = 5 + r.colEnd * 2;
+      for (var i = 0; i < txt.length; i++) {
+        var ch = txt[txt.length - 1 - i];
+        var pos = targetIdx - i * 2 + (ch === '−' ? 1 : 0);
+        if (pos >= 0 && pos < slots.length) slots[pos] = ch;
+      }
+      var lineStr = slots.join('').replace(/\s+$/, '');
+      if (r.kind === 'sub') {
+        lines.push('<span class="sub-line">' + lineStr + '</span>');
+      } else {
+        lines.push('<span>' + lineStr + '</span>');
+      }
+    });
+    document.getElementById('classicPre').innerHTML = lines.join('\n');
+  }
+
+  document.querySelectorAll('[data-cmp]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('[data-cmp]').forEach(function (x) {
+        x.classList.toggle('on', x === btn);
+        x.setAttribute('aria-pressed', String(x === btn));
+      });
+      var parts = btn.getAttribute('data-cmp').split(',').map(Number);
+      renderCompare(parts[0], parts[1]);
+    });
+  });
+
+  // 3. Explorador euclídeo
+  var rD = document.getElementById('eRangeD');
+  var rQ = document.getElementById('eRangeQ');
+  var rR = document.getElementById('eRangeR');
+  var eCanvas = document.getElementById('euclidCanvas');
+
+  function updateEuclid() {
+    var d = Number(rD.value);
+    rR.max = String(d - 1);
+    if (Number(rR.value) >= d) rR.value = String(d - 1);
+    var q = Number(rQ.value);
+    var r = Number(rR.value);
+    var D = d * q + r;
+
+    document.getElementById('eValD').textContent = String(d);
+    document.getElementById('eValQ').textContent = String(q);
+    document.getElementById('eValR').textContent = String(r);
+    document.getElementById('euclidEq').textContent =
+      d + ' × ' + q + ' + ' + r + ' = ' + D + ' · (resto ' + r + ' < divisor ' + d + ') ✓';
+
+    V.drawAreaProof(eCanvas, { dividend: D, divisor: d, quotient: q, remainder: r, progress: 1 });
+  }
+
+  [rD, rQ, rR].forEach(function (el) { el.addEventListener('input', updateEuclid); });
+
+  renderCompare(45639, 9);
+  updateEuclid();
+  window.addEventListener('resize', updateEuclid);
+}());
+</script>
+</body>
+</html>

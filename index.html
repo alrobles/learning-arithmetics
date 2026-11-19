@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cronógrafo Aritmético · División directa saltando pasos</title>
+<meta name="description" content="Plataforma web interactiva y gamificada para dominar la división directa en casita (algoritmo saltando pasos, sin cero inicial y ceros al cociente en la misma fila), con visualizaciones en Canvas 2D y 8 niveles progresivos. Sin librerías ni conexión.">
+<meta name="theme-color" content="#101318">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23101318'/%3E%3Ccircle cx='16' cy='16' r='11.5' fill='none' stroke='%23e5b339' stroke-width='2'/%3E%3Ctext x='16' y='21.5' text-anchor='middle' font-family='monospace' font-size='17' font-weight='700' fill='%23e5b339'%3E%C3%B7%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/chronograph.css">
+<style>
+  .hero-wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: clamp(28px, 4.5vw, 52px) clamp(16px, 3vw, 40px) 44px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.04fr) minmax(0, 1.16fr);
+    gap: clamp(28px, 4vw, 52px);
+    align-items: center;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(2.5rem, 5.2vw, 4.1rem);
+    line-height: 1.02;
+    letter-spacing: -0.028em;
+    margin-bottom: 20px;
+  }
+  .hero-copy h1 em {
+    font-style: normal;
+    color: var(--brass);
+  }
+  .hero-lede {
+    font-size: clamp(1rem, 1.5vw, 1.14rem);
+    color: var(--ink-silver);
+    max-width: 50ch;
+    margin-bottom: 28px;
+    line-height: 1.62;
+  }
+  .hero-lede strong { color: var(--ink-ivory); }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 34px;
+  }
+
+  .hero-pillars {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    border-top: 1px solid var(--hair);
+    padding-top: 20px;
+  }
+  .pillar dt {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink-ivory);
+    margin-bottom: 4px;
+  }
+  .pillar dd {
+    margin: 0;
+    font-size: 13px;
+    color: var(--ink-muted);
+    line-height: 1.48;
+  }
+
+  /* Banco cronográfico interactivo del héroe */
+  .hero-bench {
+    padding: 22px 24px;
+    display: grid;
+    gap: 16px;
+  }
+  .bench-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--hair);
+    padding-bottom: 12px;
+  }
+  .bench-title {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink-silver);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .bench-title strong { color: var(--brass); }
+
+  .hero-casita-box {
+    background: var(--bg-recess);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+    padding: 14px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .hero-radar-wrap {
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    background: var(--bg-recess);
+    height: 112px;
+  }
+  .hero-radar-wrap canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .bench-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+  .bench-foot a {
+    color: var(--brass);
+    font-weight: 700;
+  }
+
+  /* Secciones editoriales inferiores */
+  .band {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 56px clamp(16px, 3vw, 40px) 16px;
+  }
+  .band-head {
+    max-width: 62ch;
+    margin-bottom: 30px;
+  }
+  .band-head h2 {
+    font-size: clamp(1.75rem, 3.2vw, 2.4rem);
+    line-height: 1.12;
+    margin-bottom: 10px;
+  }
+  .band-head p {
+    color: var(--ink-silver);
+    font-size: 15.5px;
+  }
+
+  /* Arquitectura asimétrica de talleres (una pieza protagonista + 4 módulos en 2 columnas) */
+  .workshops {
+    display: grid;
+    gap: 18px;
+  }
+  .ws-lead {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    background: var(--bg-chamber);
+    border: 1px solid var(--brass-line);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    color: var(--ink-ivory);
+    transition: transform 0.2s var(--ease-out), border-color 0.2s ease;
+  }
+  .ws-lead:hover {
+    text-decoration: none;
+    transform: translateY(-2px);
+    border-color: var(--brass);
+  }
+  .ws-lead-art {
+    background: var(--bg-recess);
+    border-right: 1px solid var(--hair);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+  }
+  .ws-lead-art canvas {
+    width: 100%;
+    height: 150px;
+    display: block;
+    border-radius: var(--r-sm);
+  }
+  .ws-lead-body {
+    padding: 28px 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+  }
+  .ws-lead-body h3 {
+    font-size: 1.65rem;
+    line-height: 1.15;
+  }
+  .ws-lead-body p {
+    color: var(--ink-silver);
+    font-size: 15px;
+    max-width: 48ch;
+  }
+  .ws-go {
+    margin-top: auto;
+    padding-top: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brass);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ws-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .ws-item {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 18px;
+    align-items: center;
+    padding: 20px 22px;
+    background: var(--bg-chamber);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-lg);
+    color: var(--ink-ivory);
+    transition: transform 0.2s var(--ease-out), border-color 0.2s ease, background 0.2s ease;
+  }
+  .ws-item:hover {
+    text-decoration: none;
+    transform: translateY(-2px);
+    border-color: var(--hair-strong);
+    background: var(--bg-chamber-hi);
+  }
+  .ws-glyph {
+    width: 112px;
+    height: 92px;
+    border-radius: var(--r-md);
+    background: var(--bg-recess);
+    border: 1px solid var(--hair);
+    display: grid;
+    place-items: center;
+  }
+  .ws-item h3 {
+    font-size: 1.25rem;
+    margin-bottom: 6px;
+  }
+  .ws-item p {
+    font-size: 14px;
+    color: var(--ink-silver);
+    margin-bottom: 10px;
+  }
+
+  /* Cuaderno de Papá + Cronógrafo de Dominio */
+  .dual-band {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 24px;
+    align-items: stretch;
+  }
+  .notebook-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 18px;
+  }
+  .nb-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: center;
+    padding: 16px 18px;
+    border-radius: var(--r-md);
+    background: var(--bg-recess);
+    border: 1px solid var(--hair);
+    color: var(--ink-ivory);
+    transition: border-color 0.16s ease, background 0.16s ease;
+  }
+  .nb-row:hover {
+    text-decoration: none;
+    border-color: var(--brass-line);
+    background: #121720;
+  }
+  .nb-eq {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--brass-bright);
+    min-width: 126px;
+  }
+  .nb-meta b {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 2px;
+  }
+  .nb-meta span {
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+  .nb-status {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: var(--pill);
+    border: 1px solid var(--hair);
+    color: var(--ink-muted);
+  }
+  .nb-status.done {
+    border-color: rgba(56, 217, 169, 0.45);
+    background: var(--emerald-soft);
+    color: var(--emerald);
+  }
+
+  .telemetry-panel {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .telemetry-panel h2 {
+    font-size: 1.45rem;
+  }
+  .dial-box {
+    height: 232px;
+    position: relative;
+  }
+  .dial-box canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .xp-rail {
+    display: grid;
+    gap: 6px;
+  }
+  .xp-rail-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--ink-silver);
+  }
+  .xp-track {
+    height: 8px;
+    border-radius: var(--pill);
+    background: var(--bg-recess);
+    border: 1px solid var(--hair);
+    overflow: hidden;
+  }
+  .xp-fill {
+    height: 100%;
+    background: var(--brass);
+    border-radius: var(--pill);
+    transition: width 0.4s var(--ease-out);
+  }
+
+  /* Mapa futuro del repositorio learning-arithmetics */
+  .roadmap-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 20px;
+  }
+  .rm-col {
+    padding: 16px 18px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--hair);
+    background: var(--bg-chamber);
+  }
+  .rm-col.active {
+    border-color: var(--brass-line);
+    background: #171d26;
+  }
+  .rm-col strong {
+    display: block;
+    font-family: var(--serif);
+    font-size: 1.12rem;
+    margin-bottom: 4px;
+  }
+  .rm-col p {
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+
+  @media (max-width: 1020px) {
+    .hero-wrap, .ws-lead, .dual-band {
+      grid-template-columns: 1fr;
+    }
+    .ws-lead-art {
+      border-right: 0;
+      border-bottom: 1px solid var(--hair);
+    }
+    .ws-grid, .roadmap-strip {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 680px) {
+    .hero-pillars { grid-template-columns: 1fr; }
+    .ws-item { grid-template-columns: 1fr; }
+    .ws-glyph { width: 100%; height: 74px; }
+    .nb-row { grid-template-columns: 1fr; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <span class="brand-dial" aria-hidden="true">÷</span>
+    <span>Aritmética · <em>Cronógrafo</em></span>
+  </a>
+  <nav class="main-nav" aria-label="Navegación principal">
+    <a href="index.html" aria-current="page">Portada</a>
+    <a href="division.html">Taller Casita</a>
+    <a href="reparto.html">Reparto Base 10</a>
+    <a href="tablas.html">Múltiplos Relámpago</a>
+    <a href="aventura.html">Campaña 8 Niveles</a>
+    <a href="guia.html">Anatomía y Guía</a>
+  </nav>
+  <div class="hud-pills">
+    <span class="hud-pill brass" title="Racha actual sin errores">Racha <strong id="hudStreak">0</strong></span>
+    <span class="hud-pill hide-md"><strong id="hudXp">0 XP</strong></span>
+    <span class="hud-pill hide-md" id="hudRank">I · Aprendiz</span>
+    <button type="button" class="btn-icon" id="btnAudioToggle" aria-pressed="true" aria-label="Activar o silenciar sonido"></button>
+  </div>
+</header>
+
+<main id="contenido">
+  <section class="hero-wrap">
+    <div class="hero-copy">
+      <h1>Divide <em>saltando pasos</em> con precisión de reloj.</h1>
+      <p class="lede">
+        El algoritmo directo en casita tal como se hace en el cuaderno: <strong>sin cero inicial</strong>, con <strong>resta mental</strong> y <strong>ceros al cociente bajando en la misma fila</strong>. Diseñado para teclado, velocidad y comprensión visual real.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-brass" href="division.html">
+          <span>Abrir Taller de Casita</span>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+        <a class="btn btn-ghost" href="division.html?mode=notebook">
+          <span>Reto: Cuaderno de Papá</span>
+        </a>
+      </div>
+      <dl class="hero-pillars">
+        <div class="pillar">
+          <dt>8 Niveles Progresivos</dt>
+          <dd>Desde 2 cifras exactas hasta 5 cifras con dobles ceros y tablas del 6 al 9.</dd>
+        </div>
+        <div class="pillar">
+          <dt>Visor Rayos-X</dt>
+          <dd>Muestra la resta mental antes de confirmar para construir seguridad y luego soltarla.</dd>
+        </div>
+        <div class="pillar">
+          <dt>Visuales Sincronizados</dt>
+          <dd>Radar de múltiplos, reparto en Base 10 y comprobación geométrica en vivo.</dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="chamber chamber-accent hero-bench">
+      <div class="bench-head">
+        <span class="bench-title">DEMOSTRACIÓN EN VIVO · <strong id="heroEqLabel">45639 ÷ 9</strong></span>
+        <div class="seg" role="group" aria-label="Elegir ejemplo del cuaderno">
+          <button type="button" class="on" data-demo="0" aria-pressed="true">45639 ÷ 9</button>
+          <button type="button" data-demo="1" aria-pressed="false">6418 ÷ 8</button>
+          <button type="button" data-demo="2" aria-pressed="false">3749 ÷ 4</button>
+        </div>
+      </div>
+
+      <div class="hero-casita-box">
+        <div id="heroCasitaGrid" class="casita-grid compact" aria-live="polite"></div>
+        <div id="heroCoach" class="coach-bar" style="width:100%">Observa cómo cada cifra cae en su columna exacta…</div>
+      </div>
+
+      <div class="hero-radar-wrap">
+        <canvas id="heroRadar" role="img" aria-label="Radar sincronizado de múltiplos del divisor"></canvas>
+      </div>
+
+      <div class="bench-foot">
+        <span id="heroNote">En 45639 ÷ 9: al bajar el 6, como 6 &lt; 9, va 0 arriba y el 3 baja en la misma fila (0 6 3).</span>
+        <a id="heroTryLink" href="division.html?d=45639&amp;v=9">Resolverla tú mismo →</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="talleres-titulo">
+    <div class="band-head">
+      <h2 id="talleres-titulo">Cinco talleres para dominar la división directa</h2>
+      <p>Cada vista ataca una pieza concreta del algoritmo: la mecánica rápida en teclado, la intuición física en Base 10, las micro-habilidades de cálculo mental y la progresión exigente por niveles.</p>
+    </div>
+
+    <div class="workshops">
+      <a class="ws-lead" href="division.html">
+        <div class="ws-lead-art">
+          <canvas id="leadAreaCanvas" role="img" aria-label="Comprobación geométrica proporcional de 8 por 802 más 2 igual a 6418"></canvas>
+        </div>
+        <div class="ws-lead-body">
+          <h3>Taller de la Casita Directa</h3>
+          <p>El corazón de la plataforma. Resuelve directo con el teclado físico (0–9) saltando las restas escritas, con diagnóstico inteligente ante cualquier tropiezo, modo Rayos-X opcional, contrarreloj de 90 segundos y modo libre para escribir cualquier división.</p>
+          <span class="ws-go">Entrar al taller principal →</span>
+        </div>
+      </a>
+
+      <div class="ws-grid">
+        <a class="ws-item" href="reparto.html">
+          <div class="ws-glyph" aria-hidden="true">
+            <svg width="72" height="60" viewBox="0 0 72 60" fill="none">
+              <rect x="6" y="10" width="16" height="40" rx="3" stroke="#56b6f7" stroke-width="1.75" fill="rgba(86,182,247,0.14)"/>
+              <rect x="28" y="10" width="16" height="40" rx="3" stroke="#38d9a9" stroke-width="1.75" fill="rgba(56,217,169,0.14)"/>
+              <rect x="50" y="10" width="16" height="40" rx="3" stroke="#e5b339" stroke-width="1.75" fill="rgba(229,179,57,0.14)"/>
+              <circle cx="14" cy="24" r="3" fill="#56b6f7"/><circle cx="14" cy="36" r="3" fill="#56b6f7"/>
+              <circle cx="36" cy="24" r="3" fill="#38d9a9"/><circle cx="36" cy="36" r="3" fill="#38d9a9"/>
+              <circle cx="58" cy="24" r="3" fill="#e5b339"/><circle cx="58" cy="36" r="3" fill="#e5b339"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Reparto en Base 10</h3>
+            <p>Observa cómo los millares, centenas, decenas y unidades se reparten en cámaras iguales y se desagrupan en vivo.</p>
+            <span class="ws-go">Explorar reparto →</span>
+          </div>
+        </a>
+
+        <a class="ws-item" href="tablas.html">
+          <div class="ws-glyph" aria-hidden="true">
+            <svg width="72" height="60" viewBox="0 0 72 60" fill="none">
+              <line x1="8" y1="36" x2="64" y2="36" stroke="#8e98a8" stroke-width="1.75"/>
+              <line x1="18" y1="29" x2="18" y2="43" stroke="#b9c1cd" stroke-width="1.75"/>
+              <line x1="36" y1="29" x2="36" y2="43" stroke="#38d9a9" stroke-width="2"/>
+              <line x1="54" y1="29" x2="54" y2="43" stroke="#b9c1cd" stroke-width="1.75"/>
+              <path d="M44 12 L44 36" stroke="#e5b339" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="44" cy="12" r="4" fill="#e5b339"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Múltiplos y Restas Relámpago</h3>
+            <p>Entrena en velocidad las 3 micro-habilidades del salto: ¿cuántas veces cabe?, ¿cuánto sobra? y ¡alerta de cero!</p>
+            <span class="ws-go">Entrenar reflejos →</span>
+          </div>
+        </a>
+
+        <a class="ws-item" href="aventura.html">
+          <div class="ws-glyph" aria-hidden="true">
+            <svg width="72" height="60" viewBox="0 0 72 60" fill="none">
+              <circle cx="36" cy="30" r="20" stroke="#e5b339" stroke-width="1.75" stroke-dasharray="5 3"/>
+              <circle cx="36" cy="30" r="11" stroke="#56b6f7" stroke-width="1.75"/>
+              <line x1="36" y1="30" x2="49" y2="21" stroke="#e5b339" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="36" cy="30" r="3" fill="#f2ede2"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Campaña de 8 Niveles</h3>
+            <p>Escalera de dificultad progresiva con estrellas, cronógrafo de precisión por divisor (2 al 9) y 10 medallas grabadas.</p>
+            <span class="ws-go">Ver escalera y estadísticas →</span>
+          </div>
+        </a>
+
+        <a class="ws-item" href="guia.html">
+          <div class="ws-glyph" aria-hidden="true">
+            <svg width="72" height="60" viewBox="0 0 72 60" fill="none">
+              <path d="M22 44 L22 18 L58 18" stroke="#f2ede2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="27" y1="37" x2="45" y2="37" stroke="#e5b339" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="51" cy="46" r="6" stroke="#e85d56" stroke-width="1.75"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Anatomía y Comparación</h3>
+            <p>Diagrama interactivo de divisor, dividendo, cociente y resto, más el comparador lado a lado entre algoritmo largo y directo.</p>
+            <span class="ws-go">Leer guía interactiva →</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="cuaderno-titulo">
+    <div class="dual-band">
+      <div class="chamber" style="padding:26px 28px">
+        <h2 id="cuaderno-titulo" style="font-size:1.65rem;margin-bottom:8px">Reto: El Cuaderno de Papá</h2>
+        <p style="color:var(--ink-silver);font-size:14.5px">Las tres divisiones exactas del cuaderno original. Resuelve las tres sin pistas para desbloquear la medalla <strong>Cuaderno de Papá</strong>.</p>
+        <div class="notebook-list" id="notebookList"></div>
+      </div>
+
+      <div class="chamber telemetry-panel">
+        <h2>Tu Cronógrafo de Dominio</h2>
+        <p style="color:var(--ink-muted);font-size:13.5px">Precisión acumulada por cada tabla del 2 al 9 (guardada en este navegador).</p>
+        <div class="dial-box">
+          <canvas id="homeMasteryDial" role="img" aria-label="Dial circular de precisión por divisor del 2 al 9"></canvas>
+        </div>
+        <div class="xp-rail">
+          <div class="xp-rail-top">
+            <span id="homeRankName">Aprendiz de Casita</span>
+            <span class="num" id="homeRankNext">0 / 150 XP</span>
+          </div>
+          <div class="xp-track"><div class="xp-fill" id="homeXpFill" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="ruta-repo-titulo">
+    <div class="band-head" style="margin-bottom:14px">
+      <h2 id="ruta-repo-titulo">Hoja de ruta de learning-arithmetics</h2>
+      <p>Construido con la misma arquitectura sin dependencias de <strong>atomic-simulation</strong>: empezamos dominando la división directa a fondo y el sistema queda listo para sumar nuevos módulos aritméticos.</p>
+    </div>
+    <div class="roadmap-strip">
+      <div class="rm-col active">
+        <strong>1. División Directa</strong>
+        <p>Activo · 5 talleres, 8 niveles, reparto Base 10 y telemetría completa.</p>
+      </div>
+      <div class="rm-col">
+        <strong>2. Multiplicación</strong>
+        <p>Próximo módulo · rejilla de áreas, cálculo mental y potencias de 10.</p>
+      </div>
+      <div class="rm-col">
+        <strong>3. Fracciones y Razones</strong>
+        <p>Próximo módulo · equivalencia geométrica y vínculo directo con el resto.</p>
+      </div>
+      <div class="rm-col">
+        <strong>4. Divisores de 2 Cifras</strong>
+        <p>Próximo módulo · estimación por redondeo y tanteo guiado.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="foot-inner">
+    <p><strong>learning-arithmetics</strong> · HTML, CSS y JavaScript puro sin dependencias · 100 % offline.</p>
+    <nav class="foot-links" aria-label="Enlaces del proyecto">
+      <a href="division.html">Taller Casita</a>
+      <a href="reparto.html">Reparto Base 10</a>
+      <a href="tablas.html">Múltiplos Relámpago</a>
+      <a href="aventura.html">Campaña</a>
+      <a href="guia.html">Guía</a>
+      <a href="https://github.com/alrobles/learning-arithmetics" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="js/division-engine.js"></script>
+<script src="js/gamification.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/visualizers.js"></script>
+<script src="js/casita-ui.js"></script>
+<script src="js/nav.js"></script>
+<script>
+(function () {
+  'use strict';
+  var E = window.DivisionEngine;
+  var G = window.Gamification;
+  var V = window.ChronoVisuals;
+
+  var demos = [
+    {
+      dividend: 45639,
+      divisor: 9,
+      note: 'En 45639 ÷ 9: al bajar el 6, como 6 < 9, va 0 arriba y el 3 baja en la misma fila (0 6 3).'
+    },
+    {
+      dividend: 6418,
+      divisor: 8,
+      note: 'En 6418 ÷ 8: subrayado en 64, salto de cero (0 1 8 en una sola fila) y resto final 2 rodeado.'
+    },
+    {
+      dividend: 3749,
+      divisor: 4,
+      note: 'En 3749 ÷ 4: subrayado en 37 sin cero inicial y tres restas mentales encadenadas (14, 29, 1).'
+    }
+  ];
+
+  var radarCanvas = document.getElementById('heroRadar');
+  var leadCanvas = document.getElementById('leadAreaCanvas');
+  var dialCanvas = document.getElementById('homeMasteryDial');
+  var eqLabel = document.getElementById('heroEqLabel');
+  var noteEl = document.getElementById('heroNote');
+  var tryLink = document.getElementById('heroTryLink');
+  var currentDemo = 0;
+
+  var heroCtrl = new window.CasitaController({
+    gridEl: document.getElementById('heroCasitaGrid'),
+    coachEl: document.getElementById('heroCoach'),
+    compact: true,
+    readOnly: true,
+    onStepChange: function (info) {
+      var st = info.step;
+      var sol = info.solution;
+      var wVal = st ? st.working : (sol.remainder);
+      V.drawMultipleRadar(radarCanvas, {
+        divisor: sol.divisor,
+        working: wVal,
+        revealAnswer: info.completed || (st && st.type === 'remainder'),
+        chosenQ: st && st.qForStep != null ? st.qForStep : null
+      });
+    }
+  });
+
+  function selectDemo(idx) {
+    currentDemo = idx;
+    var d = demos[idx];
+    eqLabel.textContent = d.dividend + ' ÷ ' + d.divisor;
+    noteEl.textContent = d.note;
+    tryLink.href = 'division.html?d=' + d.dividend + '&v=' + d.divisor;
+    document.querySelectorAll('[data-demo]').forEach(function (btn) {
+      var on = Number(btn.getAttribute('data-demo')) === idx;
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-pressed', String(on));
+    });
+    heroCtrl.load(d.dividend, d.divisor);
+    var prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      heroCtrl.stepCursor = heroCtrl.solution.steps.length;
+      heroCtrl.completed = true;
+      heroCtrl.render();
+      heroCtrl._emitStep();
+    } else {
+      heroCtrl.playDemo(950, true);
+    }
+  }
+
+  document.querySelectorAll('[data-demo]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      selectDemo(Number(btn.getAttribute('data-demo')));
+    });
+  });
+
+  function renderNotebookAndTelemetry() {
+    var st = G.load();
+    var nbList = document.getElementById('notebookList');
+    nbList.innerHTML = '';
+    E.FATHERS_NOTEBOOK.forEach(function (item) {
+      var done = st.fathersDone.indexOf(item.id) !== -1;
+      var a = document.createElement('a');
+      a.className = 'nb-row';
+      a.href = 'division.html?mode=notebook&nb=' + encodeURIComponent(item.id);
+      a.innerHTML =
+        '<span class="nb-eq">' + item.dividend + ' ÷ ' + item.divisor + '</span>' +
+        '<span class="nb-meta"><b>' + item.title + '</b><span>' + item.note + '</span></span>' +
+        '<span class="nb-status' + (done ? ' done' : '') + '">' + (done ? 'Superado ✓' : 'Practicar →') + '</span>';
+      nbList.appendChild(a);
+    });
+
+    var rank = G.getRank(st.xp);
+    document.getElementById('homeRankName').textContent = rank.current.code + ' · ' + rank.current.title;
+    document.getElementById('homeRankNext').textContent = rank.next
+      ? (st.xp + ' / ' + rank.next.minXp + ' XP')
+      : (st.xp + ' XP · Rango máximo');
+    document.getElementById('homeXpFill').style.width = rank.progressPct + '%';
+
+    V.drawMasteryDial(dialCanvas, G.getDivisorStats(st));
+    V.drawAreaProof(leadCanvas, { dividend: 6418, divisor: 8, quotient: 802, remainder: 2, progress: 1 });
+  }
+
+  selectDemo(0);
+  renderNotebookAndTelemetry();
+  window.addEventListener('resize', function () {
+    renderNotebookAndTelemetry();
+    if (heroCtrl.solution) heroCtrl._emitStep();
+  });
+}());
+</script>
+</body>
+</html>

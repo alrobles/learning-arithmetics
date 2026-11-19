@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taller de la Casita Directa · Cronógrafo Aritmético</title>
+<meta name="description" content="Practica la división directa saltando pasos con teclado físico, Rayos-X opcional, radar de múltiplos, reparto en Base 10 y comprobación geométrica en vivo.">
+<meta name="theme-color" content="#101318">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23101318'/%3E%3Ccircle cx='16' cy='16' r='11.5' fill='none' stroke='%23e5b339' stroke-width='2'/%3E%3Ctext x='16' y='21.5' text-anchor='middle' font-family='monospace' font-size='17' font-weight='700' fill='%23e5b339'%3E%C3%B7%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/chronograph.css">
+<style>
+  .studio-shell {
+    max-width: 1380px;
+    margin: 0 auto;
+    padding: 18px clamp(14px, 2.4vw, 30px) 36px;
+    display: grid;
+    gap: 16px;
+  }
+
+  /* Barra de control del taller */
+  .control-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 16px;
+    padding: 12px 16px;
+    background: var(--bg-chamber);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+  }
+  .ctl-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .level-strip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .lv-btn {
+    padding: 6px 11px;
+    border-radius: 7px;
+    border: 1px solid var(--hair);
+    background: var(--bg-recess);
+    color: var(--ink-silver);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  }
+  .lv-btn:hover {
+    border-color: var(--hair-strong);
+    color: var(--ink-ivory);
+  }
+  .lv-btn.on {
+    background: var(--brass);
+    border-color: var(--brass);
+    color: var(--bg-slate);
+  }
+  .lv-btn .stars {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--brass);
+  }
+  .lv-btn.on .stars { color: var(--bg-slate); }
+
+  /* Rejilla principal: Casita a la izquierda + 3 visualizadores sincronizados a la derecha */
+  .studio-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.24fr) minmax(340px, 0.96fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  .bench-panel {
+    padding: 20px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .bench-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--hair);
+    padding-bottom: 12px;
+  }
+  .bench-meta h1 {
+    font-size: 1.45rem;
+    line-height: 1.2;
+  }
+  .bench-meta p {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+
+  .timer-cluster {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .timer-readout {
+    font-family: var(--mono);
+    font-size: 17px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: var(--r-sm);
+    background: var(--bg-recess);
+    border: 1px solid var(--hair);
+    color: var(--ink-ivory);
+    min-width: 92px;
+    text-align: center;
+  }
+  .timer-readout.sprint-low {
+    border-color: var(--crimson);
+    color: var(--crimson);
+  }
+
+  /* Barra de modo libre o cuaderno de papá */
+  .sub-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: var(--r-sm);
+    background: var(--bg-recess);
+    border: 1px solid var(--hair);
+  }
+  .sub-bar label {
+    font-size: 13px;
+    color: var(--ink-silver);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .sub-bar input[type="number"] {
+    width: 112px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--hair-strong);
+    background: var(--bg-chamber);
+    color: var(--ink-ivory);
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .sub-bar input[type="number"].short { width: 68px; }
+
+  .casita-well {
+    background: var(--bg-recess);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+    padding: 24px 16px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .action-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .kbd-hint {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-muted);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .kbd-hint kbd {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--hair-strong);
+    background: var(--bg-recess);
+    color: var(--ink-ivory);
+  }
+
+  /* Panel de victoria inline (sin modal intrusivo) */
+  .victory-card {
+    padding: 18px 20px;
+    border-radius: var(--r-md);
+    background: rgba(56, 217, 169, 0.08);
+    border: 1px solid rgba(56, 217, 169, 0.42);
+    display: grid;
+    gap: 12px;
+  }
+  .victory-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .victory-top h2 {
+    font-size: 1.35rem;
+    color: var(--emerald);
+  }
+  .victory-stars {
+    display: inline-flex;
+    gap: 5px;
+  }
+  .victory-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    color: var(--ink-ivory);
+  }
+  .victory-metrics span { color: var(--ink-muted); font-family: var(--sans); font-size: 12.5px; margin-right: 4px; }
+  .badge-toast {
+    padding: 8px 12px;
+    border-radius: 7px;
+    background: var(--brass-soft);
+    border: 1px solid var(--brass-line);
+    color: var(--brass-bright);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  /* Columna derecha: 3 visualizadores sincronizados */
+  .viz-rail {
+    display: grid;
+    gap: 14px;
+  }
+  .viz-card {
+    background: var(--bg-chamber);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+    padding: 14px 16px;
+    display: grid;
+    gap: 10px;
+  }
+  .viz-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+  }
+  .viz-head strong {
+    font-family: var(--sans);
+    font-weight: 700;
+    color: var(--ink-ivory);
+  }
+  .viz-head span {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+  .viz-canvas-wrap {
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    border: 1px solid var(--hair);
+    background: var(--bg-recess);
+  }
+  .viz-canvas-wrap canvas {
+    width: 100%;
+    display: block;
+  }
+
+  .sprint-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: var(--r-sm);
+    background: var(--brass-soft);
+    border: 1px solid var(--brass-line);
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--brass-bright);
+  }
+
+  @media (max-width: 1040px) {
+    .studio-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#taller">Saltar al taller</a>
+
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <span class="brand-dial" aria-hidden="true">÷</span>
+    <span>Aritmética · <em>Cronógrafo</em></span>
+  </a>
+  <nav class="main-nav" aria-label="Navegación principal">
+    <a href="index.html">Portada</a>
+    <a href="division.html" aria-current="page">Taller Casita</a>
+    <a href="reparto.html">Reparto Base 10</a>
+    <a href="tablas.html">Múltiplos Relámpago</a>
+    <a href="aventura.html">Campaña 8 Niveles</a>
+    <a href="guia.html">Anatomía y Guía</a>
+  </nav>
+  <div class="hud-pills">
+    <span class="hud-pill brass">Racha <strong id="hudStreak">0</strong></span>
+    <span class="hud-pill hide-md"><strong id="hudXp">0 XP</strong></span>
+    <span class="hud-pill hide-md" id="hudRank">I · Aprendiz</span>
+    <button type="button" class="btn-icon" id="btnAudioToggle" aria-pressed="true" aria-label="Activar o silenciar sonido"></button>
+  </div>
+</header>
+
+<main id="taller" class="studio-shell">
+  <section class="control-bar" aria-label="Controles de modo y nivel">
+    <div class="ctl-group">
+      <div class="seg" role="group" aria-label="Modo de práctica">
+        <button type="button" data-mode="levels" aria-pressed="true" class="on">Niveles 1–8</button>
+        <button type="button" data-mode="notebook" aria-pressed="false">Cuaderno de Papá</button>
+        <button type="button" data-mode="sprint" aria-pressed="false">Contrarreloj 90s</button>
+        <button type="button" data-mode="custom" aria-pressed="false">Modo Libre</button>
+      </div>
+    </div>
+
+    <div class="level-strip" id="levelStrip" aria-label="Selector de nivel"></div>
+  </section>
+
+  <div class="studio-grid">
+    <!-- PANEL IZQUIERDO: CASITA INTERACTIVA -->
+    <section class="chamber chamber-accent bench-panel">
+      <div class="bench-meta">
+        <div>
+          <h1 id="benchTitle">Nivel 1 · Primeras Casitas Exactas</h1>
+          <p id="benchSub">Dos cifras que se reparten sin sobrante y arrancan desde la primera cifra.</p>
+        </div>
+        <div class="timer-cluster">
+          <div class="timer-readout" id="timerReadout" aria-live="off">00:00.0</div>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnNewProblem" title="Generar nueva división (tecla N)">Nueva</button>
+        </div>
+      </div>
+
+      <!-- Barra contextual: Cuaderno de Papá -->
+      <div class="sub-bar" id="notebookBar" hidden>
+        <span style="font-size:13px;color:var(--ink-silver);font-weight:700">Ejemplos del cuaderno:</span>
+        <div class="seg" id="notebookPills" role="group" aria-label="Elegir división del cuaderno"></div>
+      </div>
+
+      <!-- Barra contextual: Modo Libre -->
+      <form class="sub-bar" id="customForm" hidden>
+        <label>Dividendo <input type="number" id="inDividend" min="1" max="99999" value="45639" required></label>
+        <label>Divisor <input type="number" id="inDivisor" class="short" min="2" max="9" value="9" required></label>
+        <button type="submit" class="btn btn-brass btn-sm">Cargar en casita</button>
+      </form>
+
+      <!-- Barra contextual: Contrarreloj -->
+      <div class="sprint-banner" id="sprintBanner" hidden>
+        <span>CONTRARRELOJ · Resueltas: <strong id="sprintCount">0</strong></span>
+        <button type="button" class="btn btn-brass btn-sm" id="btnSprintRestart">Reiniciar 90s</button>
+      </div>
+
+      <div class="casita-well">
+        <div id="casitaGrid" class="casita-grid" tabindex="0" aria-label="Casita interactiva de división directa"></div>
+        <div id="xrayStrip" class="xray-strip" hidden></div>
+        <div id="coachBar" class="coach-bar" style="width:100%" aria-live="polite"></div>
+        <div id="numpad" class="numpad" aria-label="Teclado numérico táctil"></div>
+      </div>
+
+      <div id="victoryCard" class="victory-card" hidden>
+        <div class="victory-top">
+          <h2 id="victoryHeadline">División perfecta</h2>
+          <div class="victory-stars" id="victoryStars" aria-label="Calificación en estrellas"></div>
+        </div>
+        <div class="victory-metrics" id="victoryMetrics"></div>
+        <div id="badgeToast" class="badge-toast" hidden></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button type="button" class="btn btn-brass btn-sm" id="btnNextAfterWin">Siguiente ejercicio (Enter) →</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnReplaySame">Repetir esta misma</button>
+        </div>
+      </div>
+
+      <div class="action-strip">
+        <div class="ctl-group">
+          <button type="button" class="btn btn-ghost btn-sm" id="btnToggleXray" aria-pressed="false" title="Mostrar resta mental oculta (tecla X)">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>Rayos-X: <b id="xrayLabel">No</b></span>
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnToggleDrop" aria-pressed="true" title="Bajar siguiente cifra automáticamente o a mano">
+            <span>Bajada: <b id="dropLabel">Auto</b></span>
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnHint" title="Mostrar pista del paso actual (tecla H)">Pista</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnDemoPlay" title="Ver cómo se resuelve paso a paso">Ver demostración</button>
+        </div>
+        <div class="kbd-hint">
+          <span><kbd>0</kbd>–<kbd>9</kbd> escribir</span>
+          <span><kbd>X</kbd> Rayos-X</span>
+          <span><kbd>H</kbd> pista</span>
+          <span><kbd>Enter</kbd> siguiente</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL DERECHO: TRES VISUALIZADORES SINCRONIZADOS -->
+    <aside class="viz-rail" aria-label="Visualizadores sincronizados">
+      <div class="viz-card">
+        <div class="viz-head">
+          <strong>Radar de Múltiplos</strong>
+          <span id="vizRadarMeta">Tabla del 9</span>
+        </div>
+        <div class="viz-canvas-wrap">
+          <canvas id="radarCanvas" height="118" role="img" aria-label="Recta graduada de múltiplos del divisor"></canvas>
+        </div>
+      </div>
+
+      <div class="viz-card">
+        <div class="viz-head">
+          <strong>Reparto en Base 10 (en vivo)</strong>
+          <span id="vizBase10Meta">Sincronizado a la columna activa</span>
+        </div>
+        <div class="viz-canvas-wrap">
+          <canvas id="base10Canvas" height="206" role="img" aria-label="Reparto visual de bloques en Base 10 en cámaras iguales"></canvas>
+        </div>
+      </div>
+
+      <div class="viz-card">
+        <div class="viz-head">
+          <strong>Comprobación Geométrica</strong>
+          <span id="vizAreaMeta">d × c + r = D</span>
+        </div>
+        <div class="viz-canvas-wrap">
+          <canvas id="areaCanvas" height="122" role="img" aria-label="Rectángulo de área que verifica divisor por cociente más resto"></canvas>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<script src="js/division-engine.js"></script>
+<script src="js/gamification.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/visualizers.js"></script>
+<script src="js/casita-ui.js"></script>
+<script src="js/nav.js"></script>
+<script>
+(function () {
+  'use strict';
+  var E = window.DivisionEngine;
+  var G = window.Gamification;
+  var V = window.ChronoVisuals;
+
+  var state = G.load();
+  var currentMode = 'levels'; // levels | notebook | sprint | custom
+  var currentLevelId = 1;
+  var currentNotebookIdx = 0;
+  var sprintActive = false;
+  var sprintEndAt = 0;
+  var sprintSolved = 0;
+  var timerRaf = null;
+  var problemStartTs = Date.now();
+  var lastStepInfo = null;
+
+  var elLevelStrip = document.getElementById('levelStrip');
+  var elBenchTitle = document.getElementById('benchTitle');
+  var elBenchSub = document.getElementById('benchSub');
+  var elTimer = document.getElementById('timerReadout');
+  var elNotebookBar = document.getElementById('notebookBar');
+  var elNotebookPills = document.getElementById('notebookPills');
+  var elCustomForm = document.getElementById('customForm');
+  var elSprintBanner = document.getElementById('sprintBanner');
+  var elSprintCount = document.getElementById('sprintCount');
+  var elVictory = document.getElementById('victoryCard');
+  var elVictoryHeadline = document.getElementById('victoryHeadline');
+  var elVictoryStars = document.getElementById('victoryStars');
+  var elVictoryMetrics = document.getElementById('victoryMetrics');
+  var elBadgeToast = document.getElementById('badgeToast');
+
+  var radarCanvas = document.getElementById('radarCanvas');
+  var base10Canvas = document.getElementById('base10Canvas');
+  var areaCanvas = document.getElementById('areaCanvas');
+  var vizRadarMeta = document.getElementById('vizRadarMeta');
+  var vizBase10Meta = document.getElementById('vizBase10Meta');
+  var vizAreaMeta = document.getElementById('vizAreaMeta');
+
+  function starSvg(filled) {
+    return '<svg width="20" height="20" viewBox="0 0 24 24" fill="' + (filled ? '#e5b339' : 'none') + '" stroke="' + (filled ? '#e5b339' : '#525c6e') + '" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+  }
+
+  function formatMs(ms) {
+    var totalTenths = Math.max(0, Math.floor(ms / 100));
+    var mins = Math.floor(totalTenths / 600);
+    var secs = Math.floor((totalTenths % 600) / 10);
+    var tenths = totalTenths % 10;
+    return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0') + '.' + tenths;
+  }
+
+  function renderVisualizers(info) {
+    if (!info || !info.solution) return;
+    lastStepInfo = info;
+    var sol = info.solution;
+    var st = info.step;
+    var wVal = st ? st.working : sol.remainder;
+    var showRadarHit = info.completed || ctrl.xrayOn || (st && st.type === 'remainder');
+
+    vizRadarMeta.textContent = info.completed
+      ? ('Verificada · resto ' + sol.remainder)
+      : ('Tabla del ' + sol.divisor + ' · parcial ' + wVal);
+    V.drawMultipleRadar(radarCanvas, {
+      divisor: sol.divisor,
+      working: wVal,
+      completed: info.completed,
+      revealAnswer: showRadarHit,
+      chosenQ: (st && st.type === 'remainder') ? st.qForStep : null
+    });
+
+    var activeCol = st ? st.col : (sol.length - 1);
+    var hideB10 = !info.completed && !ctrl.xrayOn && st && st.type === 'quotient';
+    vizBase10Meta.textContent = 'Columna ' + (activeCol + 1) + ' de ' + sol.length;
+    V.drawBase10Sharing(base10Canvas, {
+      dividend: sol.dividend,
+      divisor: sol.divisor,
+      stageIndex: activeCol,
+      hideAnswer: hideB10,
+      animT: 1
+    });
+
+    var prog = sol.steps.length > 0 ? Math.min(1, info.stepCursor / sol.steps.length) : 1;
+    vizAreaMeta.textContent = info.completed
+      ? (sol.divisor + ' × ' + sol.quotient + (sol.remainder ? ' + ' + sol.remainder : '') + ' = ' + sol.dividend)
+      : ('Avance ' + Math.round(prog * 100) + '%');
+    V.drawAreaProof(areaCanvas, {
+      dividend: sol.dividend,
+      divisor: sol.divisor,
+      quotient: sol.quotient,
+      remainder: sol.remainder,
+      progress: info.completed ? 1 : Math.max(0.12, prog)
+    });
+  }
+
+  var ctrl = new window.CasitaController({
+    gridEl: document.getElementById('casitaGrid'),
+    coachEl: document.getElementById('coachBar'),
+    xrayEl: document.getElementById('xrayStrip'),
+    numpadEl: document.getElementById('numpad'),
+    autoDrop: state.prefs.autoDrop,
+    xrayOn: state.prefs.xray,
+    onStepChange: renderVisualizers,
+    onStepAttempt: function (ev) {
+      if (ev.step.type === 'quotient' || ev.step.type === 'remainder') {
+        state = G.recordStepTelemetry(state, ev.divisor, ev.correct, ev.durationMs);
+        G.save(state);
+      }
+    },
+    onComplete: function (res) {
+      var outcome = G.recordDivisionComplete(state, res);
+      state = outcome.state;
+      G.save(state);
+      if (window.ChronoNav) window.ChronoNav.refreshHud(state);
+      renderLevelStrip();
+      renderNotebookPills();
+
+      if (currentMode === 'sprint' && sprintActive) {
+        sprintSolved++;
+        elSprintCount.textContent = String(sprintSolved);
+        setTimeout(function () {
+          if (sprintActive) loadNextProblem();
+        }, 550);
+        return;
+      }
+
+      elVictory.hidden = false;
+      elVictoryHeadline.textContent = outcome.perfect
+        ? 'División perfecta · sin errores'
+        : 'División resuelta';
+      elVictoryStars.innerHTML = starSvg(outcome.stars >= 1) + starSvg(outcome.stars >= 2) + starSvg(outcome.stars >= 3);
+      elVictoryMetrics.innerHTML =
+        '<div><span>Tiempo</span>' + formatMs(res.elapsedMs) + '</div>' +
+        '<div><span>Errores</span>' + res.mistakes + '</div>' +
+        '<div><span>Ganancia</span>+' + outcome.earnedXp + ' XP</div>' +
+        '<div><span>Prueba</span>' + res.divisor + ' × ' + res.quotient + (res.remainder ? ' + ' + res.remainder : '') + ' = ' + res.dividend + '</div>';
+
+      if (outcome.newBadges.length) {
+        var names = outcome.newBadges.map(function (id) {
+          var b = G.BADGES.find(function (x) { return x.id === id; });
+          return b ? b.title : id;
+        });
+        elBadgeToast.hidden = false;
+        elBadgeToast.textContent = 'Nueva medalla desbloqueada: ' + names.join(' · ');
+      } else {
+        elBadgeToast.hidden = true;
+      }
+    }
+  });
+
+  function updateToggleButtons() {
+    var bx = document.getElementById('btnToggleXray');
+    bx.setAttribute('aria-pressed', String(ctrl.xrayOn));
+    document.getElementById('xrayLabel').textContent = ctrl.xrayOn ? 'Sí' : 'No';
+
+    var bd = document.getElementById('btnToggleDrop');
+    bd.setAttribute('aria-pressed', String(ctrl.autoDrop));
+    document.getElementById('dropLabel').textContent = ctrl.autoDrop ? 'Auto' : 'Manual';
+  }
+
+  function renderLevelStrip() {
+    elLevelStrip.innerHTML = '';
+    if (currentMode !== 'levels') return;
+    E.LEVELS.forEach(function (lv) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      var stars = (state.levels[lv.id] && state.levels[lv.id].bestStars) || 0;
+      btn.className = 'lv-btn' + (lv.id === currentLevelId ? ' on' : '');
+      btn.innerHTML = 'N' + lv.id + (stars > 0 ? ' <span class="stars">' + '★'.repeat(stars) + '</span>' : '');
+      btn.title = 'Nivel ' + lv.id + ': ' + lv.name + ' (' + lv.short + ')';
+      btn.addEventListener('click', function () {
+        currentLevelId = lv.id;
+        renderLevelStrip();
+        loadNextProblem();
+      });
+      elLevelStrip.appendChild(btn);
+    });
+  }
+
+  function renderNotebookPills() {
+    elNotebookPills.innerHTML = '';
+    E.FATHERS_NOTEBOOK.forEach(function (item, idx) {
+      var done = state.fathersDone.indexOf(item.id) !== -1;
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = idx === currentNotebookIdx ? 'on' : '';
+      b.setAttribute('aria-pressed', String(idx === currentNotebookIdx));
+      b.textContent = item.dividend + ' ÷ ' + item.divisor + (done ? ' ✓' : '');
+      b.addEventListener('click', function () {
+        currentNotebookIdx = idx;
+        renderNotebookPills();
+        loadNextProblem();
+      });
+      elNotebookPills.appendChild(b);
+    });
+  }
+
+  function tickTimer() {
+    if (currentMode === 'sprint') {
+      if (sprintActive) {
+        var left = sprintEndAt - Date.now();
+        if (left <= 0) {
+          sprintActive = false;
+          elTimer.textContent = '00:00.0';
+          elTimer.classList.remove('sprint-low');
+          elVictory.hidden = false;
+          elVictoryHeadline.textContent = 'Tiempo cumplido · Contrarreloj 90s';
+          elVictoryStars.innerHTML = starSvg(sprintSolved >= 1) + starSvg(sprintSolved >= 3) + starSvg(sprintSolved >= 5);
+          elVictoryMetrics.innerHTML = '<div><span>Divisiones completadas</span>' + sprintSolved + '</div>';
+          elBadgeToast.hidden = true;
+          return;
+        }
+        elTimer.textContent = formatMs(left);
+        elTimer.classList.toggle('sprint-low', left < 15000);
+      }
+    } else if (!ctrl.completed) {
+      elTimer.classList.remove('sprint-low');
+      elTimer.textContent = formatMs(Date.now() - problemStartTs);
+    }
+    timerRaf = requestAnimationFrame(tickTimer);
+  }
+
+  function setMode(mode) {
+    currentMode = mode;
+    sprintActive = false;
+    document.querySelectorAll('[data-mode]').forEach(function (b) {
+      var on = b.getAttribute('data-mode') === mode;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    elNotebookBar.hidden = (mode !== 'notebook');
+    elCustomForm.hidden = (mode !== 'custom');
+    elSprintBanner.hidden = (mode !== 'sprint');
+    elLevelStrip.hidden = (mode !== 'levels');
+
+    if (mode === 'levels') renderLevelStrip();
+    if (mode === 'notebook') renderNotebookPills();
+    if (mode === 'sprint') {
+      sprintSolved = 0;
+      elSprintCount.textContent = '0';
+      sprintEndAt = Date.now() + 90000;
+      sprintActive = true;
+    }
+    loadNextProblem();
+  }
+
+  function loadSpecific(dividend, divisor, meta, title, subtitle) {
+    elVictory.hidden = true;
+    elBenchTitle.textContent = title;
+    elBenchSub.textContent = subtitle;
+    problemStartTs = Date.now();
+    ctrl.load(dividend, divisor, meta || {});
+    if (!timerRaf) timerRaf = requestAnimationFrame(tickTimer);
+  }
+
+  function loadNextProblem() {
+    elVictory.hidden = true;
+    if (currentMode === 'levels') {
+      var lv = E.LEVELS.find(function (l) { return l.id === currentLevelId; }) || E.LEVELS[0];
+      var p = E.generateProblem(lv.id);
+      loadSpecific(p.dividend, p.divisor, { levelId: lv.id }, 'Nivel ' + lv.id + ' · ' + lv.name, lv.description);
+    } else if (currentMode === 'notebook') {
+      var item = E.FATHERS_NOTEBOOK[currentNotebookIdx] || E.FATHERS_NOTEBOOK[0];
+      loadSpecific(item.dividend, item.divisor, { notebookId: item.id }, 'Cuaderno de Papá · ' + item.dividend + ' ÷ ' + item.divisor, item.note);
+    } else if (currentMode === 'sprint') {
+      var spLv = 3 + Math.floor(Math.random() * 4); // niveles 3..6 para ritmo alto
+      var sp = E.generateProblem(spLv);
+      loadSpecific(sp.dividend, sp.divisor, { levelId: spLv }, 'Contrarreloj 90s · ' + sp.dividend + ' ÷ ' + sp.divisor, 'Escribe rápido con el teclado 0–9. Sin pausas entre divisiones.');
+    } else {
+      var D = Math.min(99999, Math.max(1, parseInt(document.getElementById('inDividend').value, 10) || 45639));
+      var d = Math.min(9, Math.max(2, parseInt(document.getElementById('inDivisor').value, 10) || 9));
+      document.getElementById('inDividend').value = String(D);
+      document.getElementById('inDivisor').value = String(d);
+      loadSpecific(D, d, {}, 'Modo Libre · ' + D + ' ÷ ' + d, 'Cualquier dividendo hasta 5 cifras entre divisores del 2 al 9.');
+    }
+  }
+
+  // Enlaces de botones
+  document.querySelectorAll('[data-mode]').forEach(function (b) {
+    b.addEventListener('click', function () { setMode(b.getAttribute('data-mode')); });
+  });
+
+  document.getElementById('customForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    loadNextProblem();
+  });
+
+  document.getElementById('btnNewProblem').addEventListener('click', function () {
+    if (currentMode === 'notebook') {
+      currentNotebookIdx = (currentNotebookIdx + 1) % E.FATHERS_NOTEBOOK.length;
+      renderNotebookPills();
+    }
+    loadNextProblem();
+  });
+
+  document.getElementById('btnSprintRestart').addEventListener('click', function () {
+    sprintSolved = 0;
+    elSprintCount.textContent = '0';
+    sprintEndAt = Date.now() + 90000;
+    sprintActive = true;
+    loadNextProblem();
+  });
+
+  document.getElementById('btnNextAfterWin').addEventListener('click', function () {
+    if (currentMode === 'notebook') {
+      currentNotebookIdx = (currentNotebookIdx + 1) % E.FATHERS_NOTEBOOK.length;
+      renderNotebookPills();
+    }
+    loadNextProblem();
+  });
+
+  document.getElementById('btnReplaySame').addEventListener('click', function () {
+    if (ctrl.solution) {
+      loadSpecific(ctrl.solution.dividend, ctrl.solution.divisor, ctrl.meta, elBenchTitle.textContent, elBenchSub.textContent);
+    }
+  });
+
+  document.getElementById('btnToggleXray').addEventListener('click', function () {
+    ctrl.setXray(!ctrl.xrayOn);
+    state.prefs.xray = ctrl.xrayOn;
+    G.save(state);
+    updateToggleButtons();
+    if (lastStepInfo) renderVisualizers(lastStepInfo);
+  });
+
+  document.getElementById('btnToggleDrop').addEventListener('click', function () {
+    ctrl.setAutoDrop(!ctrl.autoDrop);
+    state.prefs.autoDrop = ctrl.autoDrop;
+    G.save(state);
+    updateToggleButtons();
+  });
+
+  document.getElementById('btnHint').addEventListener('click', function () {
+    ctrl.giveHint();
+  });
+
+  document.getElementById('btnDemoPlay').addEventListener('click', function () {
+    if (!ctrl.solution) return;
+    elVictory.hidden = true;
+    ctrl.playDemo(850, false);
+  });
+
+  // Teclado físico primero (0–9, X, H, N, Enter)
+  document.addEventListener('keydown', function (ev) {
+    if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA' || ev.target.tagName === 'SELECT')) {
+      return;
+    }
+    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+
+    if (ev.key >= '0' && ev.key <= '9') {
+      ev.preventDefault();
+      ctrl.inputDigit(Number(ev.key));
+    } else if (ev.key === 'Enter' && ctrl.completed) {
+      ev.preventDefault();
+      document.getElementById('btnNextAfterWin').click();
+    } else if (ev.key === 'x' || ev.key === 'X') {
+      ev.preventDefault();
+      document.getElementById('btnToggleXray').click();
+    } else if (ev.key === 'h' || ev.key === 'H') {
+      ev.preventDefault();
+      ctrl.giveHint();
+    } else if (ev.key === 'n' || ev.key === 'N') {
+      ev.preventDefault();
+      document.getElementById('btnNewProblem').click();
+    }
+  });
+
+  window.addEventListener('resize', function () {
+    if (lastStepInfo) renderVisualizers(lastStepInfo);
+  });
+
+  // Leer parámetros URL (?level=5 | ?mode=notebook&nb=pap-6418 | ?d=45639&v=9)
+  updateToggleButtons();
+  var params = new URLSearchParams(window.location.search);
+  var pD = parseInt(params.get('d'), 10);
+  var pV = parseInt(params.get('v'), 10);
+  var pMode = params.get('mode');
+  var pLv = parseInt(params.get('level'), 10);
+  var pNb = params.get('nb');
+
+  if (pD >= 1 && pD <= 99999 && pV >= 2 && pV <= 9) {
+    document.getElementById('inDividend').value = String(pD);
+    document.getElementById('inDivisor').value = String(pV);
+    setMode('custom');
+  } else if (pMode === 'notebook') {
+    if (pNb) {
+      var nbIdx = E.FATHERS_NOTEBOOK.findIndex(function (x) { return x.id === pNb; });
+      if (nbIdx >= 0) currentNotebookIdx = nbIdx;
+    }
+    setMode('notebook');
+  } else if (pMode === 'sprint') {
+    setMode('sprint');
+  } else {
+    if (pLv >= 1 && pLv <= 8) currentLevelId = pLv;
+    setMode('levels');
+  }
+}());
+</script>
+</body>
+</html>

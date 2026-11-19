@@ -1,0 +1,18 @@
+{
+  "name": "learning-arithmetics",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Plataforma web interactiva y gamificada para aprender aritmética (empezando con división directa saltando pasos), HTML + CSS + JS puro sin dependencias ni build.",
+  "scripts": {
+    "test": "node tests/check.js",
+    "serve": "python3 -m http.server 8080"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alrobles/learning-arithmetics.git"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

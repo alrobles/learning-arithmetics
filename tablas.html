@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Múltiplos y Restas Relámpago · Cronógrafo Aritmético</title>
+<meta name="description" content="Entrena en velocidad con el teclado las tres micro-habilidades del algoritmo saltando pasos: cuántas veces cabe, cuánto sobra en resta mental y alerta de cero al cociente.">
+<meta name="theme-color" content="#101318">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23101318'/%3E%3Ccircle cx='16' cy='16' r='11.5' fill='none' stroke='%23e5b339' stroke-width='2'/%3E%3Ctext x='16' y='21.5' text-anchor='middle' font-family='monospace' font-size='17' font-weight='700' fill='%23e5b339'%3E%C3%B7%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/chronograph.css">
+<style>
+  .dojo-shell {
+    max-width: 1220px;
+    margin: 0 auto;
+    padding: 24px clamp(14px, 2.5vw, 34px) 48px;
+    display: grid;
+    gap: 18px;
+  }
+  .dojo-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 14px;
+  }
+  .dojo-head h1 { font-size: clamp(1.75rem, 3.2vw, 2.35rem); }
+  .dojo-head p { color: var(--ink-silver); max-width: 60ch; margin-top: 6px; font-size: 15px; }
+
+  .dojo-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-chamber);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+  }
+  .div-pills {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .div-pill {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--hair);
+    background: var(--bg-recess);
+    color: var(--ink-silver);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 700;
+  }
+  .div-pill.on {
+    background: var(--sky-soft);
+    border-color: var(--sky);
+    color: var(--ink-ivory);
+  }
+
+  .dojo-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.75fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  .arena {
+    padding: 26px 28px;
+    display: grid;
+    gap: 18px;
+  }
+  .arena-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--hair);
+    padding-bottom: 12px;
+  }
+  .combo-readout {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 14px;
+  }
+  .combo-readout strong { color: var(--brass-bright); font-size: 17px; }
+
+  .prompt-stage {
+    background: var(--bg-recess);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+    padding: 34px 20px;
+    text-align: center;
+    display: grid;
+    gap: 14px;
+    place-items: center;
+    transition: border-color 0.16s ease, background 0.16s ease;
+  }
+  .prompt-stage.flash-ok {
+    border-color: var(--emerald);
+    background: rgba(56, 217, 169, 0.08);
+  }
+  .prompt-stage.flash-err {
+    border-color: var(--crimson);
+    background: rgba(232, 93, 86, 0.09);
+  }
+
+  .prompt-question {
+    font-size: 14.5px;
+    color: var(--ink-silver);
+  }
+  .prompt-equation {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(2.1rem, 4.8vw, 3.2rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink-ivory);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .prompt-equation .hi-div { color: var(--sky); }
+  .prompt-equation .hi-val { color: var(--brass-bright); }
+  .prompt-equation .hi-sub { color: var(--ink-muted); font-size: 0.65em; }
+  .prompt-slot {
+    display: inline-grid;
+    place-items: center;
+    min-width: 60px;
+    height: 64px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 2px solid var(--brass);
+    background: var(--brass-soft);
+    color: var(--brass-bright);
+  }
+
+  .radar-box {
+    border-radius: var(--r-md);
+    border: 1px solid var(--hair);
+    overflow: hidden;
+    background: var(--bg-recess);
+    height: 118px;
+  }
+  .radar-box canvas { width: 100%; height: 100%; display: block; }
+
+  .side-stats {
+    padding: 20px 22px;
+    display: grid;
+    gap: 14px;
+  }
+  .side-stats h2 { font-size: 1.25rem; }
+  .kv-list {
+    display: grid;
+    gap: 0;
+  }
+  .kv-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--hair);
+    font-size: 14px;
+  }
+  .kv-row span { color: var(--ink-muted); }
+  .kv-row strong { font-family: var(--mono); color: var(--ink-ivory); }
+
+  .log-box {
+    background: var(--bg-recess);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-sm);
+    padding: 10px 12px;
+    max-height: 220px;
+    overflow-y: auto;
+    font-family: var(--mono);
+    font-size: 12px;
+    display: grid;
+    gap: 5px;
+  }
+  .log-item { display: flex; justify-content: space-between; gap: 8px; }
+  .log-item.ok { color: var(--emerald); }
+  .log-item.err { color: var(--crimson); }
+
+  @media (max-width: 960px) {
+    .dojo-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#dojo">Saltar al entrenador</a>
+
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <span class="brand-dial" aria-hidden="true">÷</span>
+    <span>Aritmética · <em>Cronógrafo</em></span>
+  </a>
+  <nav class="main-nav" aria-label="Navegación principal">
+    <a href="index.html">Portada</a>
+    <a href="division.html">Taller Casita</a>
+    <a href="reparto.html">Reparto Base 10</a>
+    <a href="tablas.html" aria-current="page">Múltiplos Relámpago</a>
+    <a href="aventura.html">Campaña 8 Niveles</a>
+    <a href="guia.html">Anatomía y Guía</a>
+  </nav>
+  <div class="hud-pills">
+    <span class="hud-pill brass">Racha <strong id="hudStreak">0</strong></span>
+    <span class="hud-pill hide-md"><strong id="hudXp">0 XP</strong></span>
+    <span class="hud-pill hide-md" id="hudRank">I · Aprendiz</span>
+    <button type="button" class="btn-icon" id="btnAudioToggle" aria-pressed="true" aria-label="Activar o silenciar sonido"></button>
+  </div>
+</header>
+
+<main id="dojo" class="dojo-shell">
+  <div class="dojo-head">
+    <div>
+      <h1>Múltiplos y Restas Relámpago</h1>
+      <p>El secreto para saltar pasos en la casita está en automatizar tres reflejos mentales. Pulsa del 0 al 9 en tu teclado físico sin despegar los dedos.</p>
+    </div>
+    <div class="seg" role="group" aria-label="Formato de sesión">
+      <button type="button" data-session="endless" class="on" aria-pressed="true">Práctica Libre</button>
+      <button type="button" data-session="sprint60" aria-pressed="false">Sprint 60s</button>
+    </div>
+  </div>
+
+  <section class="dojo-controls" aria-label="Modo de micro-habilidad y filtro de divisores">
+    <div class="seg" role="group" aria-label="Elegir micro-habilidad">
+      <button type="button" data-skill="fit" class="on" aria-pressed="true">1. ¿Cuántas veces cabe?</button>
+      <button type="button" data-skill="sub" aria-pressed="false">2. ¿Cuánto sobra? (Resta)</button>
+      <button type="button" data-skill="zero" aria-pressed="false">3. ¡Alerta de Cero!</button>
+    </div>
+
+    <div class="div-pills" id="divPills" aria-label="Elegir tablas a practicar"></div>
+  </section>
+
+  <div class="dojo-grid">
+    <section class="chamber chamber-accent arena">
+      <div class="arena-top">
+        <div class="combo-readout">
+          <span>Combo <strong id="elCombo">0</strong></span>
+          <span>Aciertos <strong id="elHits">0</strong></span>
+          <span>Último <strong id="elMs">—</strong></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="num" id="sprintClock" style="font-size:17px;font-weight:700;color:var(--brass-bright)" hidden>60.0s</span>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnResetSession">Reiniciar sesión</button>
+        </div>
+      </div>
+
+      <div class="prompt-stage" id="promptStage">
+        <div class="prompt-question" id="promptQuestion">¿Cuántas veces cabe el divisor sin pasarse?</div>
+        <div class="prompt-equation" id="promptEquation"></div>
+      </div>
+
+      <div class="coach-bar" id="drillCoach" aria-live="polite">Pulsa una cifra del 0 al 9 en tu teclado o en los botones de abajo.</div>
+
+      <div class="numpad" id="drillNumpad" style="margin:0 auto" aria-label="Teclado numérico"></div>
+
+      <div class="radar-box">
+        <canvas id="drillRadar" role="img" aria-label="Radar visual de múltiplos para el reto actual"></canvas>
+      </div>
+    </section>
+
+    <aside class="chamber side-stats">
+      <h2>Telemetría de Sesión</h2>
+      <div class="kv-list">
+        <div class="kv-row"><span>Precisión sesión</span><strong id="stAcc">—</strong></div>
+        <div class="kv-row"><span>Tiempo medio</span><strong id="stAvg">—</strong></div>
+        <div class="kv-row"><span>Mejor combo histórico</span><strong id="stBestCombo">0</strong></div>
+        <div class="kv-row"><span>Tablas recomendadas</span><strong id="stWeak">6, 7, 8, 9</strong></div>
+      </div>
+      <button type="button" class="btn btn-brass btn-sm" id="btnFocusWeak">Enfocar mis tablas más débiles</button>
+
+      <h2 style="margin-top:6px">Registro en vivo</h2>
+      <div class="log-box" id="drillLog" aria-live="polite">
+        <div style="color:var(--ink-muted)">Tus respuestas aparecerán aquí…</div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<script src="js/division-engine.js"></script>
+<script src="js/gamification.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/visualizers.js"></script>
+<script src="js/nav.js"></script>
+<script>
+(function () {
+  'use strict';
+  var E = window.DivisionEngine;
+  var G = window.Gamification;
+  var V = window.ChronoVisuals;
+
+  var state = G.load();
+  var skill = 'fit'; // fit | sub | zero
+  var sessionMode = 'endless'; // endless | sprint60
+  var activeDivisors = [2, 3, 4, 5, 6, 7, 8, 9];
+  var currentDrill = null;
+  var startedAt = Date.now();
+  var combo = 0, hits = 0, tries = 0, totalMs = 0;
+  var sprintEnd = 0, sprintRunning = false, sprintRaf = null;
+  var revealRadar = false;
+
+  var elStage = document.getElementById('promptStage');
+  var elQ = document.getElementById('promptQuestion');
+  var elEq = document.getElementById('promptEquation');
+  var elCoach = document.getElementById('drillCoach');
+  var elRadar = document.getElementById('drillRadar');
+  var elLog = document.getElementById('drillLog');
+  var elClock = document.getElementById('sprintClock');
+
+  function renderDivPills() {
+    var box = document.getElementById('divPills');
+    box.innerHTML = '';
+    var allBtn = document.createElement('button');
+    allBtn.type = 'button';
+    allBtn.className = 'div-pill' + (activeDivisors.length === 8 ? ' on' : '');
+    allBtn.textContent = 'Todas';
+    allBtn.addEventListener('click', function () {
+      activeDivisors = [2, 3, 4, 5, 6, 7, 8, 9];
+      renderDivPills();
+      nextDrill();
+    });
+    box.appendChild(allBtn);
+
+    for (var d = 2; d <= 9; d++) {
+      (function (div) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        var on = activeDivisors.indexOf(div) !== -1;
+        b.className = 'div-pill' + (on ? ' on' : '');
+        b.textContent = '÷' + div;
+        b.addEventListener('click', function () {
+          if (activeDivisors.length === 1 && activeDivisors[0] === div) return;
+          if (on) activeDivisors = activeDivisors.filter(function (x) { return x !== div; });
+          else activeDivisors = activeDivisors.concat([div]).sort();
+          renderDivPills();
+          nextDrill();
+        });
+        box.appendChild(b);
+      }(d));
+    }
+  }
+
+  function updateStatsUi(lastMs) {
+    document.getElementById('elCombo').textContent = String(combo);
+    document.getElementById('elHits').textContent = String(hits);
+    if (lastMs != null) document.getElementById('elMs').textContent = (lastMs / 1000).toFixed(2) + 's';
+    document.getElementById('stAcc').textContent = tries > 0 ? Math.round((hits / tries) * 100) + '%' : '—';
+    document.getElementById('stAvg').textContent = tries > 0 ? ((totalMs / tries) / 1000).toFixed(2) + 's' : '—';
+    document.getElementById('stBestCombo').textContent = String(state.drillBestCombo || 0);
+    var weak = G.getWeakestDivisors(state, 3);
+    document.getElementById('stWeak').textContent = weak.length ? weak.map(function (x) { return '÷' + x; }).join(', ') : '6, 7, 8, 9';
+  }
+
+  function drawCurrentRadar() {
+    if (!currentDrill) return;
+    var wVal = currentDrill.mode === 'zero' ? currentDrill.partial : currentDrill.working;
+    V.drawMultipleRadar(elRadar, {
+      divisor: currentDrill.divisor,
+      working: wVal,
+      revealAnswer: revealRadar || currentDrill.mode === 'sub',
+      chosenQ: currentDrill.mode === 'sub' ? currentDrill.q : null
+    });
+  }
+
+  function nextDrill() {
+    revealRadar = false;
+    currentDrill = E.generateMicroDrill(skill, { divisors: activeDivisors });
+    startedAt = Date.now();
+    elStage.classList.remove('flash-ok', 'flash-err');
+
+    if (skill === 'fit') {
+      elQ.textContent = '¿Cuántas veces cabe el divisor sin pasarse?';
+      elEq.innerHTML =
+        '<span class="hi-val">' + currentDrill.working + '</span>' +
+        '<span>÷</span>' +
+        '<span class="hi-div">' + currentDrill.divisor + '</span>' +
+        '<span>=</span>' +
+        '<span class="prompt-slot">?</span>';
+    } else if (skill === 'sub') {
+      elQ.textContent = 'Haz el salto de resta mental: ¿cuánto sobra?';
+      elEq.innerHTML =
+        '<span class="hi-val">' + currentDrill.working + '</span>' +
+        '<span class="hi-sub">(' + currentDrill.divisor + ' × ' + currentDrill.q + ')</span>' +
+        '<span>→ resto</span>' +
+        '<span class="prompt-slot">?</span>';
+    } else {
+      elQ.textContent = 'Bajaste una cifra parcial. ¿Cabe 0 veces (salto en la misma fila) o sí cabe? Escribe la cifra del cociente:';
+      elEq.innerHTML =
+        '<span class="hi-val">' + currentDrill.partial + '</span>' +
+        '<span>entre</span>' +
+        '<span class="hi-div">' + currentDrill.divisor + '</span>' +
+        '<span class="hi-sub">(siguiente cifra: ' + currentDrill.nextDigit + ')</span>' +
+        '<span class="prompt-slot">?</span>';
+    }
+    drawCurrentRadar();
+  }
+
+  function expectedAnswer() {
+    if (!currentDrill) return null;
+    if (skill === 'sub') return currentDrill.expectedR;
+    return currentDrill.expectedQ;
+  }
+
+  function appendLog(okFlag, text, ms) {
+    if (elLog.firstElementChild && !elLog.firstElementChild.classList.contains('log-item')) {
+      elLog.innerHTML = '';
+    }
+    var div = document.createElement('div');
+    div.className = 'log-item ' + (okFlag ? 'ok' : 'err');
+    div.innerHTML = '<span>' + (okFlag ? '✓ ' : '✗ ') + text + '</span><span>' + (ms / 1000).toFixed(2) + 's</span>';
+    elLog.insertBefore(div, elLog.firstChild);
+    while (elLog.children.length > 24) elLog.removeChild(elLog.lastChild);
+  }
+
+  function handleAnswer(n) {
+    if (!currentDrill) return;
+    if (sessionMode === 'sprint60' && !sprintRunning) {
+      startSprint();
+    }
+    var ms = Date.now() - startedAt;
+    var exp = expectedAnswer();
+    tries++;
+    totalMs += ms;
+
+    if (n === exp) {
+      hits++;
+      combo++;
+      elStage.classList.remove('flash-err');
+      elStage.classList.add('flash-ok');
+      var res = G.recordDrillResult(state, currentDrill.divisor, true, ms, combo);
+      state = res.state;
+      G.save(state);
+      if (window.ChronoNav) window.ChronoNav.refreshHud(state);
+
+      if (skill === 'zero' && currentDrill.isZero) {
+        if (window.ChronoSound) window.ChronoSound.zeroJump();
+        elCoach.className = 'coach-bar state-ok';
+        elCoach.textContent = '¡Cero al cociente exacto! ' + currentDrill.partial + ' < ' + currentDrill.divisor + ' → baja el ' + currentDrill.nextDigit + ' para formar ' + currentDrill.combinedIfZero + '.';
+        appendLog(true, currentDrill.partial + ' ÷ ' + currentDrill.divisor + ' → 0 (baja ' + currentDrill.nextDigit + ')', ms);
+      } else if (skill === 'sub') {
+        if (window.ChronoSound) window.ChronoSound.stepOk(combo - 1);
+        elCoach.className = 'coach-bar state-ok';
+        elCoach.textContent = 'Exacto: ' + currentDrill.working + ' − ' + currentDrill.product + ' = ' + exp + '.';
+        appendLog(true, currentDrill.working + ' − ' + currentDrill.product + ' = ' + exp, ms);
+      } else {
+        if (window.ChronoSound) window.ChronoSound.stepOk(combo - 1);
+        var w = skill === 'zero' ? currentDrill.partial : currentDrill.working;
+        elCoach.className = 'coach-bar state-ok';
+        elCoach.textContent = 'Exacto: ' + currentDrill.divisor + ' × ' + exp + ' = ' + (currentDrill.divisor * exp) + ' (sobran ' + (w - currentDrill.divisor * exp) + ').';
+        appendLog(true, w + ' ÷ ' + currentDrill.divisor + ' = ' + exp, ms);
+      }
+
+      updateStatsUi(ms);
+      revealRadar = true;
+      drawCurrentRadar();
+      setTimeout(nextDrill, 280);
+    } else {
+      combo = 0;
+      elStage.classList.remove('flash-ok');
+      elStage.classList.add('flash-err');
+      if (window.ChronoSound) window.ChronoSound.errorNudge();
+      var resErr = G.recordDrillResult(state, currentDrill.divisor, false, ms, 0);
+      state = resErr.state;
+      G.save(state);
+
+      elCoach.className = 'coach-bar state-err';
+      if (skill === 'sub') {
+        elCoach.textContent = 'Casi: ' + currentDrill.divisor + ' × ' + currentDrill.q + ' = ' + currentDrill.product + '. ¿Cuánto falta para ' + currentDrill.working + '?';
+        appendLog(false, currentDrill.working + ' − ' + currentDrill.product + ' (pusiste ' + n + ')', ms);
+      } else if (skill === 'zero' && currentDrill.isZero) {
+        elCoach.textContent = '¡Trampa de cero! ' + currentDrill.partial + ' es menor que ' + currentDrill.divisor + ': pulsa 0.';
+        appendLog(false, currentDrill.partial + ' ÷ ' + currentDrill.divisor + ' era 0 (pusiste ' + n + ')', ms);
+      } else {
+        var w2 = skill === 'zero' ? currentDrill.partial : currentDrill.working;
+        var p = n * currentDrill.divisor;
+        elCoach.textContent = p > w2
+          ? ('Te pasaste: ' + currentDrill.divisor + ' × ' + n + ' = ' + p + ' > ' + w2 + '.')
+          : ('Cabe más veces: ' + currentDrill.divisor + ' × ' + n + ' = ' + p + ' y sobran ' + (w2 - p) + '.');
+        appendLog(false, w2 + ' ÷ ' + currentDrill.divisor + ' (pusiste ' + n + ')', ms);
+      }
+      updateStatsUi(ms);
+      revealRadar = true;
+      drawCurrentRadar();
+    }
+  }
+
+  function startSprint() {
+    sprintRunning = true;
+    sprintEnd = Date.now() + 60000;
+    combo = 0; hits = 0; tries = 0; totalMs = 0;
+    elClock.hidden = false;
+    function tick() {
+      if (!sprintRunning) return;
+      var rem = sprintEnd - Date.now();
+      if (rem <= 0) {
+        sprintRunning = false;
+        elClock.textContent = '0.0s';
+        if (window.ChronoSound) window.ChronoSound.victory();
+        elCoach.className = 'coach-bar state-warn';
+        elCoach.textContent = '¡Sprint terminado! Lograste ' + hits + ' aciertos (' + (tries ? Math.round((hits / tries) * 100) : 0) + '% precisión). Pulsa cualquier número o Reiniciar para otro intento.';
+        return;
+      }
+      elClock.textContent = (rem / 1000).toFixed(1) + 's';
+      sprintRaf = requestAnimationFrame(tick);
+    }
+    if (sprintRaf) cancelAnimationFrame(sprintRaf);
+    sprintRaf = requestAnimationFrame(tick);
+  }
+
+  // Numpad
+  var pad = document.getElementById('drillNumpad');
+  for (var k = 0; k <= 9; k++) {
+    (function (digit) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = String(digit);
+      b.addEventListener('click', function () { handleAnswer(digit); });
+      pad.appendChild(b);
+    }(k));
+  }
+
+  document.querySelectorAll('[data-skill]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      skill = btn.getAttribute('data-skill');
+      document.querySelectorAll('[data-skill]').forEach(function (x) {
+        x.classList.toggle('on', x === btn);
+        x.setAttribute('aria-pressed', String(x === btn));
+      });
+      nextDrill();
+    });
+  });
+
+  document.querySelectorAll('[data-session]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      sessionMode = btn.getAttribute('data-session');
+      document.querySelectorAll('[data-session]').forEach(function (x) {
+        x.classList.toggle('on', x === btn);
+        x.setAttribute('aria-pressed', String(x === btn));
+      });
+      sprintRunning = false;
+      if (sprintRaf) cancelAnimationFrame(sprintRaf);
+      elClock.hidden = (sessionMode !== 'sprint60');
+      elClock.textContent = '60.0s';
+      combo = 0; hits = 0; tries = 0; totalMs = 0;
+      updateStatsUi(null);
+      nextDrill();
+    });
+  });
+
+  document.getElementById('btnResetSession').addEventListener('click', function () {
+    combo = 0; hits = 0; tries = 0; totalMs = 0;
+    elLog.innerHTML = '<div style="color:var(--ink-muted)">Sesión reiniciada…</div>';
+    updateStatsUi(null);
+    if (sessionMode === 'sprint60') startSprint();
+    nextDrill();
+  });
+
+  document.getElementById('btnFocusWeak').addEventListener('click', function () {
+    var weak = G.getWeakestDivisors(state, 3);
+    activeDivisors = weak.length ? weak : [6, 7, 8, 9];
+    renderDivPills();
+    nextDrill();
+  });
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+    if (ev.key >= '0' && ev.key <= '9') {
+      ev.preventDefault();
+      handleAnswer(Number(ev.key));
+    }
+  });
+
+  // Parámetro opcional ?div=8
+  var pDiv = parseInt(new URLSearchParams(window.location.search).get('div'), 10);
+  if (pDiv >= 2 && pDiv <= 9) activeDivisors = [pDiv];
+
+  window.addEventListener('resize', drawCurrentRadar);
+  renderDivPills();
+  updateStatsUi(null);
+  nextDrill();
+}());
+</script>
+</body>
+</html>
