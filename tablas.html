@@ -257,9 +257,15 @@
         <div class="prompt-equation" id="promptEquation"></div>
       </div>
 
-      <div class="coach-bar" id="drillCoach" aria-live="polite">Pulsa una cifra del 0 al 9 en tu teclado o en los botones de abajo.</div>
+      <div class="coach-bar" id="drillCoach" aria-live="polite">Pulsa del 0 al 9 en tu teclado, haz clic o arrastra una ficha numérica hasta el recuadro ?.</div>
 
-      <div class="numpad" id="drillNumpad" style="margin:0 auto" aria-label="Teclado numérico"></div>
+      <div class="numpad-wrap" style="margin:0 auto">
+        <div class="numpad" id="drillNumpad" aria-label="Pad numérico arrastrable del 0 al 9"></div>
+        <div class="numpad-caption">
+          <svg class="icon" style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+          <span>Arrastra una ficha al recuadro ?, haz clic o pulsa 0–9 en tu teclado</span>
+        </div>
+      </div>
 
       <div class="radar-box">
         <canvas id="drillRadar" role="img" aria-label="Radar visual de múltiplos para el reto actual"></canvas>
@@ -288,6 +294,7 @@
 <script src="js/gamification.js"></script>
 <script src="js/sound.js"></script>
 <script src="js/visualizers.js"></script>
+<script src="js/numpad-drag.js"></script>
 <script src="js/nav.js"></script>
 <script>
 (function () {
@@ -514,17 +521,13 @@
     sprintRaf = requestAnimationFrame(tick);
   }
 
-  // Numpad
+  // Pad numérico arrastrable + clic
   var pad = document.getElementById('drillNumpad');
-  for (var k = 0; k <= 9; k++) {
-    (function (digit) {
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = String(digit);
-      b.addEventListener('click', function () { handleAnswer(digit); });
-      pad.appendChild(b);
-    }(k));
-  }
+  window.ChronoNumpad.mount(pad, {
+    getTarget: function () { return elEq.querySelector('.prompt-slot'); },
+    onPickup: function () { if (window.ChronoSound) window.ChronoSound.tick(); },
+    onCommit: function (digit) { handleAnswer(digit); }
+  });
 
   document.querySelectorAll('[data-skill]').forEach(function (btn) {
     btn.addEventListener('click', function () {

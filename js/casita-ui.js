@@ -36,18 +36,32 @@
   CasitaController.prototype._bindEvents = function () {
     var self = this;
     if (this.numpadEl && !this.readOnly) {
-      this.numpadEl.innerHTML = '';
-      for (var d = 0; d <= 9; d++) {
-        (function (digit) {
-          var btn = document.createElement('button');
-          btn.type = 'button';
-          btn.textContent = String(digit);
-          btn.setAttribute('aria-label', 'Escribir cifra ' + digit);
-          btn.addEventListener('click', function () {
+      if (root.ChronoNumpad) {
+        root.ChronoNumpad.mount(this.numpadEl, {
+          getTarget: function () {
+            return self.gridEl ? self.gridEl.querySelector('.c-active') : null;
+          },
+          onPickup: function () {
+            if (root.ChronoSound) root.ChronoSound.tick();
+          },
+          onCommit: function (digit) {
             self.inputDigit(digit);
-          });
-          self.numpadEl.appendChild(btn);
-        }(d));
+          }
+        });
+      } else {
+        this.numpadEl.innerHTML = '';
+        for (var d = 0; d <= 9; d++) {
+          (function (digit) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = String(digit);
+            btn.setAttribute('aria-label', 'Escribir cifra ' + digit);
+            btn.addEventListener('click', function () {
+              self.inputDigit(digit);
+            });
+            self.numpadEl.appendChild(btn);
+          }(d));
+        }
       }
     }
   };

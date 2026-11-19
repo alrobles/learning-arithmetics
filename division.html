@@ -371,7 +371,13 @@
         <div id="casitaGrid" class="casita-grid" tabindex="0" aria-label="Casita interactiva de división directa"></div>
         <div id="xrayStrip" class="xray-strip" hidden></div>
         <div id="coachBar" class="coach-bar" style="width:100%" aria-live="polite"></div>
-        <div id="numpad" class="numpad" aria-label="Teclado numérico táctil"></div>
+        <div class="numpad-wrap">
+          <div id="numpad" class="numpad" aria-label="Pad numérico arrastrable del 0 al 9"></div>
+          <div class="numpad-caption">
+            <svg class="icon" style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+            <span>Arrastra cualquier número hasta la casilla iluminada, haz clic o escríbelo con el teclado</span>
+          </div>
+        </div>
       </div>
 
       <div id="victoryCard" class="victory-card" hidden>
@@ -447,6 +453,7 @@
 <script src="js/gamification.js"></script>
 <script src="js/sound.js"></script>
 <script src="js/visualizers.js"></script>
+<script src="js/numpad-drag.js"></script>
 <script src="js/casita-ui.js"></script>
 <script src="js/nav.js"></script>
 <script>

@@ -29,6 +29,7 @@ fonts/                  tipografías autoalojadas (STIX Two Text, Manrope, JetBr
 js/division-engine.js   motor aritmético puro (UMD: navegador + Node)
 js/gamification.js      progresión, telemetría y medallas (UMD: navegador + Node)
 js/casita-ui.js         controlador interactivo y de teclado de la casita
+js/numpad-drag.js       pad numérico con clic instantáneo y arrastre magnético (Pointer Events)
 js/visualizers.js       renderizadores Canvas 2D (radar, Base 10, área y dial)
 js/sound.js             síntesis táctil Web Audio API sin archivos externos
 js/nav.js               sincronización de barra superior y audio
